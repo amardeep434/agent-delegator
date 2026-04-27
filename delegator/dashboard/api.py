@@ -108,6 +108,24 @@ def _dispatch_notification(event_type, event_data):
         _send_slack(wh.get("slack_url", ""), msg)
 
 
+def get_agent_models(agent_name):
+    """Get per-model stats for an agent."""
+    registry = load_registry(project_root=_current_project)
+    agent_def = registry.get("agents", {}).get(agent_name)
+    if not agent_def:
+        return {"error": "Agent not found"}
+    recent = get_recent_delegations(100)
+    models = []
+    for m in agent_def.get("available_models", []):
+        mid = m.get("id", "")
+        model_dels = [d for d in recent if d.get("provider_used") == agent_name or d.get("to_agent") == agent_name]
+        total = len(model_dels)
+        ok = sum(1 for d in model_dels if d.get("success"))
+        models.append({"id": mid, "display": m.get("display", mid), "capabilities": m.get("capabilities", []),
+                        "total_dels": total, "success_dels": ok, "success_rate": round(ok/total, 2) if total > 0 else 1.0})
+    return {"agent": agent_name, "models": models}
+
+
 def get_status():
     registry = load_registry(project_root=_current_project)
     health = check_all_agents(registry)

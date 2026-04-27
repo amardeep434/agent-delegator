@@ -47,6 +47,10 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/projects":
             from delegator.dashboard.api import get_projects
             _json_response(self, get_projects())
+        elif path.startswith("/api/agents/"):
+            agent_name = path.split("/")[3] if len(path.split("/")) > 3 else ""
+            from delegator.dashboard.api import get_agent_models
+            _json_response(self, get_agent_models(agent_name))
         elif path == "/api/status":
             from delegator.dashboard.api import get_status
             _json_response(self, get_status())

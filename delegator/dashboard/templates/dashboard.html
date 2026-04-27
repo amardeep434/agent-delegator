@@ -588,7 +588,23 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
 function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('[id^="tab-"]').forEach(e=>e.classList.add('hidden'));const tabs=['live','logs','history','analytics','compare','queue','exec','settings'];document.querySelectorAll('.tab')[tabs.indexOf(t)].classList.add('active');document.getElementById('tab-'+t).classList.remove('hidden')}
 function switchSettingsTab(t){const parent=document.getElementById('tab-settings');parent.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));parent.querySelectorAll('[id^="set-"]').forEach(e=>e.classList.add('hidden'));const stabs=['routing','control','notifications','general'];parent.querySelectorAll('.tab')[stabs.indexOf(t)].classList.add('active');document.getElementById('set-'+t).classList.remove('hidden')}
 function selectTask(id,n){document.querySelectorAll('[id^="t-"]').forEach(e=>{e.classList.remove('glass-sel');e.classList.add('glass')});const el=document.getElementById('t-'+id);el.classList.add('glass-sel');el.classList.remove('glass');switchTab('live')}
-function toggleModal(id){document.getElementById('modal-'+id).classList.toggle('hidden')}
+async function toggleModal(id){
+  document.getElementById('modal-'+id).classList.toggle('hidden');
+  const aname = id.replace('agent-','');
+  if(aname && ['claude','opencode','copilot','codex','antigravity'].includes(aname)){
+    const d = await api('/api/agents/'+aname);
+    if(d&&d.models){
+      const tbody = document.getElementById('modal-'+id)?.querySelector('tbody');
+      if(tbody) tbody.innerHTML = d.models.map(m => 
+        `<tr style="border-bottom:1px solid #1E293B">
+          <td class="py-2 px-3 font-mono text-xs text-accent">${m.id}</td>
+          <td class="py-2 px-3"><span class="status s-info">${(m.capabilities||[]).join('</span> <span class="status s-purple">')}</span></td>
+          <td class="py-2 px-3 text-center font-mono text-xs">${m.total_dels}</td>
+          <td class="py-2 px-3 text-center font-mono text-xs text-${m.success_rate>0.8?'accent':m.success_rate>0.5?'warn':'danger'}">${Math.round(m.success_rate*100)}%</td>
+        </tr>`).join('');
+    }
+  }
+}
 document.addEventListener('keydown',function(e){if(e.key==='1')selectTask('a3f2');if(e.key==='2')selectTask('b7e8');if(e.key==='3')selectTask('c911');if(e.key==='l'&&!e.ctrlKey)switchTab('live');if(e.key==='o'&&!e.ctrlKey&&!e.target.closest('input,select'))switchTab('logs');if(e.key==='h'&&!e.ctrlKey)switchTab('history');if(e.key==='a'&&!e.ctrlKey)switchTab('analytics');if(e.key==='c'&&!e.ctrlKey)switchTab('compare');if(e.key==='q'&&!e.ctrlKey)switchTab('queue');if(e.key==='e'&&!e.ctrlKey)switchTab('exec');if(e.key==='s'&&!e.ctrlKey&&!e.target.closest('input,select'))switchTab('settings');if(e.key==='?'&&!e.target.closest('input,select')){e.preventDefault();document.getElementById('shortcuts-modal').classList.toggle('hidden')};if(e.key==='Escape')document.getElementById('shortcuts-modal').classList.add('hidden');if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus()};if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();alert('Command palette: exec,status,health,routes,model,cleanup,capabilities,optimize,learn,metrics,dashboard,init,config,test')}})
 </script>
 
@@ -680,12 +696,15 @@ async function refreshAll(){
   else if(tasks.length<_prevTaskCount)showToast('Task completed','success');
   _prevTaskCount=tasks.length;
 
-  // 7. Update active task timers
+  // 7. Update active task timers + progress bars
+  const estTime = 60; // estimated seconds per task
   tasks.forEach((t,i)=>{
     const bCards=banner?banner.querySelectorAll('.glass-sel,.glass.p-3'):null;
     if(bCards&&bCards[i]){
       const timeEl=bCards[i].querySelector('.text-2xs.font-mono,.text-2xs.text-muted.font-mono');
       if(timeEl&&t.started_at){const elapsed=Math.round(Date.now()/1000-t.started_at);timeEl.textContent=elapsed+'s'}
+      const pBar=bCards[i].querySelector('.progress .fill');
+      if(pBar&&t.started_at){const elapsed=Math.round(Date.now()/1000-t.started_at);const pct=Math.min(Math.round(elapsed/estTime*100),95);pBar.style.width=pct+'%'}
     }
   });
 }
@@ -725,6 +744,16 @@ async function loadAnalytics(){
   const byAgent={};dels.forEach(r=>{const a=r.to_agent||'unknown';byAgent[a]=(byAgent[a]||0)+1});
   const vals=Object.entries(byAgent).sort((a,b)=>b[1]-a[1]);
   const max=Math.max(1,...Object.values(byAgent));
+  // Update 7d success rate bar chart
+  const byDay={};dels.forEach(r=>{const d=(r.timestamp||'').slice(0,10);if(!byDay[d])byDay[d]={total:0,ok:0};byDay[d].total++;if(r.success)byDay[d].ok++;});
+  const days=Object.entries(byDay).slice(-7);
+  const chartDiv=document.querySelector('#tab-analytics .bar-group');
+  if(chartDiv&&days.length){
+    const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    chartDiv.innerHTML=days.map(([date,data])=>{
+      const d=new Date(date+'T00:00:00');const dn=dayNames[d.getDay()];const pct=data.total?Math.round(data.ok/data.total*100):0;
+      const cls=pct>80?'g':pct>50?'y':'r';return`<div class="flex flex-col items-center"><div class="bar ${cls}" style="height:${pct}%" title="${date}: ${data.ok}/${data.total} (${pct}%)"></div><span class="text-2xs text-muted mt-1">${dn}</span></div>`}).join('')
+  }
   // Update delegations by agent chart
   const anContainer=document.querySelector('#tab-analytics .grid .glass:nth-child(2) .space-y-2');
   if(anContainer)anContainer.innerHTML=vals.map(([a,c],i)=>{const fills=['fill-g','fill-b','fill-y','fill-p','fill-r'];return`<div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">${a}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill ${fills[i%5]}" style="width:${Math.round(c/max*100)}%"></div></div></div>`}).join('');
@@ -871,6 +900,10 @@ async function sendTestWebhook(){const c=document.querySelectorAll('#set-notific
 async function resetRankings(){const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});alert(r?'Rankings reset':'Failed')}
 
 refreshAll();setInterval(refreshAll,5000);
+// Auto-refresh logs when on logs tab
+setInterval(()=>{if(!document.getElementById('tab-logs').classList.contains('hidden'))loadLogs()},8000);
+// Auto-refresh live view when on live tab
+setInterval(()=>{if(!document.getElementById('tab-live').classList.contains('hidden')&&liveTaskId)loadLiveView()},4000);
 </script>
 
 </body>
