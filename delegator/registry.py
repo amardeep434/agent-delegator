@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from delegator.utils import load_json, deep_merge
+from delegator.utils import load_json, save_json, deep_merge
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _DEFAULT_REGISTRY = _SCRIPT_DIR / "registry.json"
@@ -30,6 +30,13 @@ def load_registry(project_root: str | None = None, force_reload: bool = False) -
 
     _cached_registry = registry
     return registry
+
+
+def save_registry(registry: dict) -> None:
+    """Save the registry to the default registry file."""
+    save_json(str(_DEFAULT_REGISTRY), registry)
+    global _cached_registry
+    _cached_registry = registry
 
 
 def get_agent(registry: dict, agent_name: str) -> dict | None:

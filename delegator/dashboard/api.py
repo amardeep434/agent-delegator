@@ -9,7 +9,7 @@ from pathlib import Path
 from delegator.registry import load_registry
 from delegator.health import check_all_agents
 from delegator.cooldowns import get_active_cooldowns
-from delegator.metrics import get_recent_delegations, get_success_rate
+from delegator.metrics import get_recent_delegations, get_success_rate, set_liked, get_liked, classify_failure, record_delegation
 from delegator.optimizer import get_rankings
 from delegator.executor import execute
 from delegator.models import DelegationRequest
@@ -153,10 +153,17 @@ def get_status():
                "task": t.get("task", ""), "started_at": t.get("start_time", 0)}
               for tid, t in _active_tasks.items()]
 
+    import time as _time
+    cooldown_list = []
+    for k, v in cooldowns.items():
+        until = v.get("cooldown_until", 0)
+        remaining = max(0, int(until - _time.time())) if until else 0
+        cooldown_list.append({"key": k, "remaining_seconds": remaining, **v})
+
     return {
         "agents": agents,
         "active_tasks": active,
-        "cooldowns": [{"key": k, **v} for k, v in cooldowns.items()],
+        "cooldowns": cooldown_list,
         "success_rate": rate,
         "recent_dels": len(recent),
         "rankings": rankings,
@@ -168,8 +175,43 @@ def get_status():
 
 def get_metrics(agent=None, days=7):
     rate = get_success_rate(agent=agent, days=days)
-    recent = get_recent_delegations(limit=20)
-    return {"success_rate": rate, "delegations": recent, "total": len(recent)}
+    recent = get_recent_delegations(limit=200)
+    if agent:
+        recent = [d for d in recent if d.get("to_agent") == agent or d.get("provider_used") == agent]
+    
+        costs = {}
+    for d in recent:
+        ag = d.get("to_agent", d.get("provider_used", "unknown"))
+        costs[ag] = costs.get(ag, 0) + float(d.get("cost") or 0)
+    
+    failures = {}
+    for d in recent:
+        if not d.get("success"):
+            ft = d.get("failure_type", "unknown")
+            failures[ft] = failures.get(ft, 0) + 1
+    
+    rankings = []
+    by_agent = {}
+    for d in recent:
+        ag = d.get("to_agent", d.get("provider_used", "unknown"))
+        if ag not in by_agent:
+            by_agent[ag] = {"total": 0, "ok": 0}
+        by_agent[ag]["total"] += 1
+        if d.get("success"):
+            by_agent[ag]["ok"] += 1
+    
+    for ag, stats in sorted(by_agent.items(), key=lambda x: (x[1]["ok"]/x[1]["total"] if x[1]["total"] else 0), reverse=True):
+        sr = stats["ok"] / stats["total"] if stats["total"] else 1.0
+        rankings.append({"agent": ag, "score": round(sr, 2), "dels": stats["total"]})
+    
+    return {
+        "success_rate": rate,
+        "delegations": recent,
+        "total": len(recent),
+        "costs": costs,
+        "failures": failures,
+        "rankings": rankings,
+    }
 
 
 def get_logs(agent=None, level=None, limit=200):
@@ -185,7 +227,33 @@ def get_logs(agent=None, level=None, limit=200):
             "level": lvl,
             "message": msg,
         })
-    return {"entries": entries, "total": len(entries)}
+    # Aggregation data
+    by_level = {"ERROR": 0, "WARN": 0, "INFO": 0, "DEBUG": 0}
+    by_agent = {}
+    top_errors = {}
+    for d in recent:
+        lvl = "ERROR" if not d.get("success") else "INFO"
+        by_level[lvl] = by_level.get(lvl, 0) + 1
+        ag = d.get("to_agent", d.get("provider_used", "unknown"))
+        by_agent[ag] = by_agent.get(ag, 0) + 1
+        if not d.get("success"):
+            ft = d.get("failure_type", "unknown")
+            top_errors[ft] = top_errors.get(ft, 0) + 1
+    
+    error_rate = by_level["ERROR"] / len(recent) if recent else 0
+    top_errors_list = [{"type": k, "count": v} for k, v in sorted(top_errors.items(), key=lambda x: -x[1])[:5]]
+    
+    return {
+        "entries": entries,
+        "total": len(entries),
+        "by_level": by_level,
+        "by_agent": by_agent,
+        "top_errors": top_errors_list,
+        "error_rate": round(error_rate, 4),
+        "avg_response_time": round(sum(d.get("duration_ms", 0) for d in recent) / len(recent) / 1000, 1) if recent else 0,
+        "active_sessions": len(set(d.get("to_agent", "") for d in recent)),
+        "log_rate": round(len(recent) / 7, 1),
+    }
 
 
 def get_routes():
@@ -267,6 +335,37 @@ def post_config(body):
         from delegator.state import rankings_path
         save_json(str(rankings_path()), {})
         return {"status": "ok", "message": "Rankings reset"}
+    if key == "like_delegation":
+        set_liked(body.get("delegation_id", ""), body.get("liked", False))
+        return {"status": "ok", "message": "Like updated"}
+    if key == "routing_priority":
+        from delegator.registry import save_registry, load_registry
+        reg = load_registry()
+        reg["provider_priority"] = body.get("priority", [])
+        save_registry(reg)
+        return {"status": "ok", "message": "Routing priority saved"}
+    if key == "add_route":
+        from delegator.registry import save_registry, load_registry
+        reg = load_registry()
+        matrix = reg.setdefault("routing_matrix", {}).setdefault("_any_agent_", {})
+        wf = body.get("workflow", "subagent-driven")
+        task = body.get("task", "implementation")
+        matrix.setdefault(wf, {})[task] = {
+            "delegate_to": body.get("agent", "opencode"),
+            "preferred_model": body.get("model", "federated-coding"),
+        }
+        save_registry(reg)
+        return {"status": "ok", "message": "Route added"}
+    if key == "remove_route":
+        from delegator.registry import save_registry, load_registry
+        reg = load_registry()
+        matrix = reg.get("routing_matrix", {}).get("_any_agent_", {})
+        wf = body.get("workflow", "")
+        task = body.get("task", "")
+        if wf in matrix and task in matrix[wf]:
+            del matrix[wf][task]
+            save_registry(reg)
+        return {"status": "ok", "message": "Route removed"}
     return {"status": "ok", "message": "Config saved"}
 
 
@@ -342,6 +441,23 @@ def post_exec(body):
         _dispatch_notification("task_completed", {"task_id": request.id, "provider": r.provider_used, "duration": f"{r.duration_ms}ms"})
     else:
         _dispatch_notification("task_failed", {"task_id": request.id, "error": r.error or "unknown"})
+
+    cost = round((r.duration_ms or 0) * 0.000001, 4)
+    failure_type = classify_failure(r.success, r.fallback_count, r.error or "")
+    record_delegation(
+        request_id=request.id,
+        from_agent=from_agent,
+        to_agent=r.provider_used or "",
+        model=r.model_used or model,
+        provider_used=r.provider_used or "",
+        workflow=workflow,
+        task_type=task[:50],
+        success=r.success,
+        fallback_count=r.fallback_count,
+        duration_ms=r.duration_ms or 0,
+        cost=cost,
+        failure_type=failure_type,
+    )
 
     return {
         "status": "success" if r.success else "failed",

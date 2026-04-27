@@ -139,7 +139,7 @@ def get_recent_delegations(limit: int = 20) -> list[dict]:
         (limit,),
     ).fetchall()
     conn.close()
-    cols = ["id", "from_agent", "to_agent", "model", "provider_used", "workflow", "task_type", "success", "fallback_count", "duration_ms", "cost", "failure_type", "liked", "timestamp"]
+    cols = ["id", "from_agent", "to_agent", "model", "provider_used", "workflow", "task_type", "success", "fallback_count", "duration_ms", "timestamp", "cost", "failure_type", "liked"]
     return [dict(zip(cols, row)) for row in rows]
 
 
