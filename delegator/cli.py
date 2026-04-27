@@ -161,6 +161,16 @@ def cmd_learn(args):
     print(f"Learned from recent delegations. Rankings updated at {result['last_optimized']}")
 
 
+def cmd_dashboard(args):
+    from delegator.dashboard.server import run_server
+    import webbrowser
+    port = args.port or 8765
+    u = f"http://127.0.0.1:{port}"
+    print(f"Opening dashboard at {u}")
+    webbrowser.open(u)
+    run_server(port=port)
+
+
 def cmd_metrics(args):
     recent = get_recent_delegations(limit=args.limit)
     rate = get_success_rate(agent=args.agent, days=args.days)
@@ -270,6 +280,10 @@ def main():
     p_metrics.add_argument("--days", type=int, default=7)
     p_metrics.add_argument("--limit", type=int, default=20)
     p_metrics.set_defaults(func=cmd_metrics)
+
+    p_dash = sub.add_parser("dashboard", help="Launch Mission Control dashboard")
+    p_dash.add_argument("--port", type=int, default=8765, help="Port (default: 8765)")
+    p_dash.set_defaults(func=cmd_dashboard)
 
     p_init = sub.add_parser("init", help="Initialize .delegator.json")
     p_init.add_argument("--project", default=None)

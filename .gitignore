@@ -6,3 +6,25 @@ agent_*.log
 HANDOFF.md
 .omc/
 *.egg-info/
+
+# IDE/agent config dirs (never commit)
+.agent/
+.claude/
+.codebuddy/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.kiro/
+.opencode/
+.qoder/
+.roo/
+.trae/
+.windsurf/
+
+# Runtime state (never commit)
+*.db
+cooldowns.json
+capabilities.json
+provider_rankings.json
+.delegator.json
