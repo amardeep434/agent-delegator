@@ -179,7 +179,7 @@ def get_metrics(agent=None, days=7):
     if agent:
         recent = [d for d in recent if d.get("to_agent") == agent or d.get("provider_used") == agent]
     
-        costs = {}
+    costs = {}
     for d in recent:
         ag = d.get("to_agent", d.get("provider_used", "unknown"))
         costs[ag] = costs.get(ag, 0) + float(d.get("cost") or 0)
