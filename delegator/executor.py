@@ -2,7 +2,9 @@
 
 import os
 import re
+import signal
 import subprocess
+import threading
 import time
 from pathlib import Path
 from delegator.models import DelegationRequest, DelegationResult
@@ -70,6 +72,21 @@ def _try_handoff(delegate_agent, logical_providers, i, task, model, worktree):
                 pass
 
 
+def _setup_signal_handler(worktree_path: str, project_root: str):
+    def cleanup_handler(signum, frame):
+        if os.path.exists(worktree_path):
+            try:
+                subprocess.run(
+                    ["git", "-C", project_root, "worktree", "remove", "--force", worktree_path],
+                    capture_output=True, timeout=10
+                )
+            except Exception:
+                pass
+        os._exit(1)
+    signal.signal(signal.SIGINT, cleanup_handler)
+    signal.signal(signal.SIGTERM, cleanup_handler)
+
+
 def execute(request: DelegationRequest, project_root: str | None = None) -> DelegationResult:
     """Execute a delegation request with federated failover.
 
@@ -109,6 +126,9 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
 
     if not request.no_worktree:
         worktree = str(_create_worktree(project, request.id))
+        _setup_signal_handler(worktree, project)
+    else:
+        worktree = str(Path(project))
 
     last_error = None
     fallback_count = 0
@@ -131,11 +151,24 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
 
         log_path = os.path.join(worktree, f"agent_{i}.log")
 
+        timeout_event = threading.Event()
+        proc = None
+
+        def on_timeout():
+            timeout_event.set()
+            if proc:
+                proc.kill()
+
+        timer = threading.Timer(600, on_timeout)
         try:
-            subprocess.run(
-                f"{cmd} 2>&1 > {log_path}", shell=True,
-                timeout=600, cwd=worktree
-            )
+            with open(log_path, "w") as log_file:
+                proc = subprocess.Popen(
+                    cmd, shell=True, stdout=log_file, stderr=subprocess.STDOUT,
+                    cwd=worktree, preexec_fn=os.setsid
+                )
+                timer.start()
+                proc.wait()
+                timer.cancel()
         except subprocess.TimeoutExpired:
             record_failure(agent, model, registry)
             fallback_count += 1
@@ -148,6 +181,9 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
             last_error = str(e)[:200]
             _try_handoff(delegate_agent, logical_providers, i, request.task, model, worktree)
             continue
+        finally:
+            if timer.is_alive():
+                timer.cancel()
 
         if _check_failure(log_path, registry):
             record_failure(agent, model, registry)
