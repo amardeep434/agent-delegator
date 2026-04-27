@@ -19,8 +19,14 @@ from delegator.metrics import get_recent_delegations, get_success_rate
 
 
 def cmd_exec(args):
+    task = args.task
+    if args.from_file:
+        task = Path(args.from_file).read_text().strip()
+    if args.output:
+        args.stream = False
+
     request = DelegationRequest(
-        task=args.task,
+        task=task,
         model=args.model,
         workflow=args.workflow,
         from_agent=args.from_agent,
@@ -39,7 +45,13 @@ def cmd_exec(args):
         output["error"] = result.error
     if result.output and not args.stream:
         output["output"] = result.output
-    print(json.dumps(output, indent=2))
+
+    output_json = json.dumps(output, indent=2)
+    if args.output:
+        Path(args.output).write_text(output_json)
+        print(f"Output written to {args.output}")
+    else:
+        print(output_json)
     sys.exit(0 if result.success else 1)
 
 
@@ -162,6 +174,15 @@ def cmd_config(args):
             print("No .delegator.json in this project. Run 'delegator init'.")
 
 
+def cmd_test(args):
+    import subprocess as sp
+    test_dir = Path(__file__).resolve().parent.parent / "tests"
+    cmd = ["python", "-m", "pytest", str(test_dir), "-v"]
+    if args.suite:
+        cmd = ["python", "-m", "pytest", str(test_dir / f"test_{args.suite}.py"), "-v"]
+    sp.run(cmd)
+
+
 def main():
     parser = argparse.ArgumentParser(description="delegator - Agent-agnostic AI CLI delegation")
     sub = parser.add_subparsers(dest="command")
@@ -173,6 +194,8 @@ def main():
     p_exec.add_argument("--from-agent", default="")
     p_exec.add_argument("--stream", action="store_true")
     p_exec.add_argument("--no-worktree", action="store_true")
+    p_exec.add_argument("--from-file", default=None, help="Read task from file")
+    p_exec.add_argument("--output", default=None, help="Redirect output to file")
     p_exec.set_defaults(func=cmd_exec)
 
     p_status = sub.add_parser("status", help="Show system status")
@@ -218,6 +241,10 @@ def main():
     p_config.add_argument("value", nargs="?", default=None, metavar="value")
     p_config.add_argument("--project", default=None)
     p_config.set_defaults(func=cmd_config)
+
+    p_test = sub.add_parser("test", help="Run integration tests")
+    p_test.add_argument("--suite", default=None)
+    p_test.set_defaults(func=cmd_test)
 
     args = parser.parse_args()
     if hasattr(args, "func"):
