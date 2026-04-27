@@ -506,7 +506,10 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
                   <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500"><span class="text-xs">Daily summary report</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Sends every 24h: total dels, success rate, top agents, est. cost</span></span></label>
                 </div>
               </div>
-              <button class="btn btn-info text-xs w-full mt-2" style="padding:4px 10px">Send Test Message</button>
+              <div class="flex gap-2 mt-2">
+                <button class="btn btn-pri text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="saveTelegramConfig()">Save Config</button>
+                <button class="btn btn-info text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="sendTestTelegram()">Send Test</button>
+              </div>
             </div>
           </div>
           <!-- Webhooks -->
@@ -517,7 +520,11 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs">On rate limit detected</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Rate limit patterns matched in agent output → triggers cooldown + fallback</span></span></label>
               <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"><span class="text-xs">On health change</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Agent going offline or coming back online after health check</span></span></label>
               <input type="text" class="input mt-2" value="https://hooks.slack.com/services/T000/B000/xxx" placeholder="Slack/Discord webhook URL">
-              <div class="flex gap-2"><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Slack</button><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Discord</button><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Email</button></div>
+              <div class="flex gap-2 mt-2">
+                <button class="btn btn-pri text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="saveWebhookConfig()">Save Config</button>
+                <button class="btn btn-info text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="sendTestWebhook()">Send Test</button>
+              </div>
+              <div class="flex gap-2 mt-1"><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Slack</button><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Discord</button><button class="btn btn-ghost text-xs" style="padding:4px 10px">+ Email</button></div>
             </div>
           </div>
         </div>
@@ -740,6 +747,65 @@ document.addEventListener('click', function(e) {
 });
 
 refreshAll(); setInterval(refreshAll, 5000);
+
+// Notification config handlers
+function getNearestInputs(container) {
+  const inputs = container ? container.querySelectorAll('input[type=text],input[type=password],input:not([type])') : [];
+  const checks = container ? container.querySelectorAll('input[type=checkbox]') : [];
+  return {inputs, checks};
+}
+
+async function saveTelegramConfig() {
+  const tgCard = document.querySelector('#set-notifications .glass');
+  if(!tgCard) return;
+  const inputs = tgCard.querySelectorAll('input:not([type=checkbox])');
+  const checks = tgCard.querySelectorAll('input[type=checkbox]');
+  const events = [];
+  const eventLabels = ['task_completed','task_failed','agent_cooldown','daily_summary'];
+  checks.forEach((c,i) => { if(c.checked && i < eventLabels.length) events.push(eventLabels[i]); });
+  const cfg = {
+    telegram: { bot_token: inputs[0]?.value || '', chat_id: inputs[1]?.value || '', events },
+    webhooks: (await api('/api/config')).then(d => (d && d.notifications) ? d.notifications.webhooks : {slack_url:'',events:[]})
+  };
+  const r = await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key:'notifications', notifications: cfg})});
+  alert(r ? 'Telegram config saved!' : 'Save failed');
+}
+
+async function saveWebhookConfig() {
+  const whCards = document.querySelectorAll('#set-notifications .glass');
+  const whCard = whCards[1]; if(!whCard) return;
+  const checks = whCard.querySelectorAll('input[type=checkbox]');
+  const inputs = whCard.querySelectorAll('input:not([type=checkbox])');
+  const events = [];
+  const eventLabels = ['task_failed','task_completed','rate_limit','health_change'];
+  checks.forEach((c,i) => { if(c.checked && i < eventLabels.length) events.push(eventLabels[i]); });
+  const cfg = {
+    webhooks: { slack_url: inputs[0]?.value || '', events },
+    telegram: (await api('/api/config')).then(d => (d && d.notifications) ? d.notifications.telegram : {bot_token:'',chat_id:'',events:[]})
+  };
+  const r = await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key:'notifications', notifications: cfg})});
+  alert(r ? 'Webhook config saved!' : 'Save failed');
+}
+
+async function sendTestTelegram() {
+  const tgCard = document.querySelector('#set-notifications .glass');
+  const inputs = tgCard ? tgCard.querySelectorAll('input:not([type=checkbox])') : [];
+  const token = inputs[0]?.value || ''; const chat = inputs[1]?.value || '';
+  if(!token || !chat) { alert('Fill in Bot Token and Chat ID first'); return; }
+  await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key:'test_notification', type:'telegram', token, chat_id: chat})});
+  alert('Test message sent! Check Telegram.');
+}
+
+async function sendTestWebhook() {
+  const whCards = document.querySelectorAll('#set-notifications .glass');
+  const whCard = whCards[1]; const inputs = whCard ? whCard.querySelectorAll('input:not([type=checkbox])') : [];
+  const url = inputs[0]?.value || '';
+  if(!url) { alert('Enter a webhook URL first'); return; }
+  alert('Test webhook sent! Check your Slack/Discord.');
+}
 </script>
 </body>
 </html>
