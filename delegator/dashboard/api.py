@@ -109,10 +109,10 @@ def _dispatch_notification(event_type, event_data):
 
 
 def get_status():
-    registry = load_registry()
+    registry = load_registry(project_root=_current_project)
     health = check_all_agents(registry)
     cooldowns = get_active_cooldowns()
-    recent = get_recent_delegations(5)
+    recent = get_recent_delegations(20)
     rate = get_success_rate(days=7)
     rankings = get_rankings()
 
@@ -120,12 +120,15 @@ def get_status():
     for name, agent_def in registry.get("agents", {}).items():
         h = health.get(name, {})
         agent_rate = get_success_rate(agent=name, days=7)
+        agent_dels = sum(1 for d in recent if d.get("to_agent") == name or d.get("provider_used") == name)
         agents.append({
             "name": name,
             "available": h.get("available", False),
             "current_model": agent_def.get("available_models", [{}])[0].get("id", ""),
             "model_count": len(agent_def.get("available_models", [])),
             "success_rate": agent_rate,
+            "del_count": agent_dels,
+            "est_cost": round(agent_dels * 0.005, 2),
         })
 
     active = [{"id": tid, "agent": t.get("agent", ""), "model": t.get("model", ""),
@@ -141,6 +144,7 @@ def get_status():
         "rankings": rankings,
         "pending_queue": len(_pending_queue),
         "scheduled": len(_scheduled_tasks),
+        "project": os.path.basename(_current_project),
     }
 
 
@@ -207,6 +211,12 @@ def post_config(body):
         from delegator.metrics import clear_delegations
         clear_delegations()
         return {"status": "ok", "message": "History cleared"}
+    if key == "test_telegram":
+        _send_telegram(body.get("token",""), body.get("chat_id",""), "🧪 Test message from delegator dashboard")
+        return {"status": "ok", "message": "Telegram test sent"}
+    if key == "test_webhook":
+        _send_slack(body.get("url",""), "🧪 Test message from delegator dashboard")
+        return {"status": "ok", "message": "Webhook test sent"}
     if key == "cooldown":
         # Save to notification_config as a proxy for now
         cfg = _load_notification_config()
@@ -296,6 +306,10 @@ def post_exec(body):
         return {"status": "error", "message": result["error"]}
     r = result["data"]
 
+    # Capture output for live view
+    if r.output:
+        _active_outputs[request.id] = r.output.split("\n")
+
     if r.success:
         _dispatch_notification("task_completed", {"task_id": request.id, "provider": r.provider_used, "duration": f"{r.duration_ms}ms"})
     else:
@@ -307,6 +321,14 @@ def post_exec(body):
         "fallback_count": r.fallback_count, "duration_ms": r.duration_ms,
         "output": r.output[:5000] if r.output else "", "error": r.error,
     }
+
+
+def exec_from_queue(task, model):
+    req = DelegationRequest(task=task, model=model or "federated-coding", workflow="subagent-driven", no_worktree=True)
+    result = execute(req)
+    if result.output:
+        _active_outputs[req.id] = result.output.split("\n")
+    return {"status": "ok", "task_id": req.id, "provider": result.provider_used, "output": (result.output or "")[:2000]}
 
 
 def post_stop_task(task_id):
