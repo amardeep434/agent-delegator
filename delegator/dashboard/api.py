@@ -119,11 +119,13 @@ def get_status():
     agents = []
     for name, agent_def in registry.get("agents", {}).items():
         h = health.get(name, {})
+        agent_rate = get_success_rate(agent=name, days=7)
         agents.append({
             "name": name,
             "available": h.get("available", False),
             "current_model": agent_def.get("available_models", [{}])[0].get("id", ""),
             "model_count": len(agent_def.get("available_models", [])),
+            "success_rate": agent_rate,
         })
 
     active = [{"id": tid, "agent": t.get("agent", ""), "model": t.get("model", ""),

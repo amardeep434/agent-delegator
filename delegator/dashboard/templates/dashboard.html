@@ -644,6 +644,12 @@ async function refreshAll(){
         if(dot)dot.className='pulse-dot '+(a.available?'online':'danger');
         const modelEl=card.querySelectorAll('.text-2xs,.text-\\2xs')[1];
         if(modelEl)modelEl.textContent=a.current_model||'';
+        // Update success rate bar
+        const ratePct=Math.round((a.success_rate||0)*100);
+        const rateTxt=card.querySelector('.text-accent.font-mono,.text-warn.font-mono,.text-danger.font-mono');
+        if(rateTxt)rateTxt.textContent=ratePct+'%';
+        const bar=card.querySelector('.progress .fill');
+        if(bar){bar.style.width=ratePct+'%';bar.className='fill '+(ratePct>80?'fill-g':ratePct>50?'fill-y':'fill-r')};
       }
     });
   });
