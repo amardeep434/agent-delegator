@@ -10,6 +10,7 @@ from delegator.registry import load_registry
 from delegator.router import resolve_route
 from delegator.resolver import resolve_logical_model, resolve_model, build_cli_command
 from delegator.cooldowns import is_cooled_down, record_failure, record_success
+from delegator.metrics import record_delegation
 
 
 def _check_rate_limit(output: str, registry: dict) -> bool:
@@ -132,6 +133,19 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
             except Exception:
                 pass
 
+        record_delegation(
+            request_id=request.id,
+            from_agent=request.from_agent or "",
+            to_agent=agent,
+            model=model_name,
+            provider_used=agent,
+            workflow=request.workflow,
+            task_type=request.task_type or "implementation",
+            success=True,
+            fallback_count=fallback_count,
+            duration_ms=duration_ms,
+        )
+
         return DelegationResult(
             success=True,
             provider_used=agent,
@@ -143,6 +157,18 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
         )
 
     duration_ms = int((time.time() - start_time) * 1000)
+    record_delegation(
+        request_id=request.id,
+        from_agent=request.from_agent or "",
+        to_agent=delegate_agent,
+        model=model_name,
+        provider_used="",
+        workflow=request.workflow,
+        task_type=request.task_type or "implementation",
+        success=False,
+        fallback_count=fallback_count,
+        duration_ms=duration_ms,
+    )
     return DelegationResult(
         success=False,
         provider_used="",
