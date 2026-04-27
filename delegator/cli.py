@@ -19,11 +19,23 @@ from delegator.metrics import get_recent_delegations, get_success_rate
 
 
 def cmd_exec(args):
-    task = args.task
+    task = args.task_override or args.task or ""
     if args.from_file:
         task = Path(args.from_file).read_text().strip()
     if args.output:
         args.stream = False
+
+    # Preview route before execution
+    registry = load_registry()
+    agent, model = resolve_route(
+        registry, args.workflow, "implementation", args.from_agent or ""
+    )
+    resolved_model = args.model or model
+    print(f"  route: {args.workflow} → {agent}")
+    print(f"  model: {resolved_model}")
+    if resolve_logical_model(registry, resolved_model):
+        print(f"  providers: {', '.join(resolve_logical_model(registry, resolved_model))}")
+    print()
 
     request = DelegationRequest(
         task=task,
@@ -188,14 +200,15 @@ def main():
     sub = parser.add_subparsers(dest="command")
 
     p_exec = sub.add_parser("exec", help="Execute delegation")
-    p_exec.add_argument("--model", required=True)
-    p_exec.add_argument("--task", required=True)
-    p_exec.add_argument("--workflow", default="subagent-driven")
-    p_exec.add_argument("--from-agent", default="")
-    p_exec.add_argument("--stream", action="store_true")
-    p_exec.add_argument("--no-worktree", action="store_true")
+    p_exec.add_argument("task", nargs="?", default=None, help="Task description (positional)")
+    p_exec.add_argument("-t", "--task", dest="task_override", default=None, help="Task description (alternative)")
+    p_exec.add_argument("-m", "--model", required=True, help="Model to use")
+    p_exec.add_argument("-w", "--workflow", default="subagent-driven", help="Workflow type")
+    p_exec.add_argument("-f", "--from-agent", default="", help="Source agent")
+    p_exec.add_argument("-s", "--stream", action="store_true", help="Stream output live")
+    p_exec.add_argument("--no-worktree", action="store_true", help="Skip worktree creation")
     p_exec.add_argument("--from-file", default=None, help="Read task from file")
-    p_exec.add_argument("--output", default=None, help="Redirect output to file")
+    p_exec.add_argument("-o", "--output", default=None, help="Write output to file")
     p_exec.set_defaults(func=cmd_exec)
 
     p_status = sub.add_parser("status", help="Show system status")

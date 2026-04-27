@@ -4,6 +4,7 @@ import os
 import re
 import signal
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -161,12 +162,19 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
 
         timer = threading.Timer(600, on_timeout)
         try:
+            stream_mode = getattr(request, 'stream', False)
             with open(log_path, "w") as log_file:
                 proc = subprocess.Popen(
-                    cmd, shell=True, stdout=log_file, stderr=subprocess.STDOUT,
-                    cwd=worktree, preexec_fn=os.setsid
+                    cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    cwd=worktree, preexec_fn=os.setsid, bufsize=1, text=True
                 )
                 timer.start()
+                for line in proc.stdout:
+                    log_file.write(line)
+                    log_file.flush()
+                    if stream_mode:
+                        sys.stdout.write(line)
+                        sys.stdout.flush()
                 proc.wait()
                 timer.cancel()
         except subprocess.TimeoutExpired:
