@@ -1,2 +1,0 @@
-[console_scripts]
-delegator = delegator.cli:main

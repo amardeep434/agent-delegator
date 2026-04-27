@@ -1,3 +1,0 @@
-delegator
-docs
-tests

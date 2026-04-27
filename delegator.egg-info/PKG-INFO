@@ -1,5 +1,0 @@
-Metadata-Version: 2.4
-Name: delegator
-Version: 0.1.0
-Summary: Agent-agnostic AI CLI delegation with federated model failover
-Requires-Python: >=3.10

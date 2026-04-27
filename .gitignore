@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .delegation/
+agent_*.log
+HANDOFF.md
+.omc/
+*.egg-info/
