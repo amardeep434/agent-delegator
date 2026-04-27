@@ -22,6 +22,44 @@ _notification_config = {
     "telegram": {"bot_token": "", "chat_id": "", "events": []},
     "webhooks": {"slack_url": "", "events": []},
 }
+_current_project = os.getcwd()
+
+def _discover_projects():
+    """Scan for projects with .delegator.json in common locations."""
+    projects = []
+    search_dirs = [
+        os.path.expanduser("~"),
+        os.path.expanduser("~/projects"),
+        os.path.expanduser("~/workspace"),
+    ]
+    for base in search_dirs:
+        if not os.path.isdir(base):
+            continue
+        try:
+            for entry in os.listdir(base):
+                full = os.path.join(base, entry)
+                if os.path.isdir(full) and os.path.exists(os.path.join(full, ".delegator.json")):
+                    projects.append({"name": entry, "path": full})
+        except PermissionError:
+            continue
+    # Always include current directory
+    cwd = os.getcwd()
+    if os.path.exists(os.path.join(cwd, ".delegator.json")) and cwd not in [p["path"] for p in projects]:
+        projects.insert(0, {"name": os.path.basename(cwd), "path": cwd})
+    return projects[:10]
+
+
+def get_projects():
+    return {"projects": _discover_projects(), "current": _current_project}
+
+
+def post_project(body):
+    global _current_project
+    new_path = body.get("path", "")
+    if os.path.isdir(new_path):
+        _current_project = new_path
+        return {"status": "ok", "project": os.path.basename(_current_project)}
+    return {"status": "error", "message": "Project directory not found"}
 _last_cleanup = {}
 
 def _state_dir():

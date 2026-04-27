@@ -100,7 +100,7 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
     <span class="text-xs text-muted">Mission Control</span>
     <span class="text-muted text-xs">|</span>
     <div class="flex items-center gap-2">
-      <select class="select text-xs" style="padding:4px 8px" id="project-switcher">
+      <select class="select text-xs" style="padding:4px 8px" id="project-switcher" onchange="switchProject(this.value)">
         <option>📁 VyapaarLink</option>
         <option>📁 delegator</option>
         <option>📁 personal-website</option>
@@ -628,6 +628,24 @@ async function api(url, opts) {
   try { const r = await fetch(API_BASE + url, opts); return r.ok ? r.json() : null; }
   catch(e) { console.debug('API:', e.message); return null; }
 }
+
+// Project switcher
+async function loadProjects() {
+  const d = await api('/api/projects'); if(!d) return;
+  const sel = document.getElementById('project-switcher');
+  if(!sel) return;
+  sel.innerHTML = d.projects.map(p => `<option value="${p.path}">📁 ${p.name}</option>`).join('');
+  if(d.current) sel.value = d.current;
+}
+async function switchProject(path) {
+  await api('/api/projects', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path})});
+  refreshAll();
+  if(switchTab) switchTab('live');
+}
+document.addEventListener('DOMContentLoaded', loadProjects);
+document.addEventListener('keydown', function(e) {
+  if(e.key === 'F7') { e.preventDefault(); document.getElementById('project-switcher')?.focus(); }
+});
 
 async function refreshAll() {
   const d = await api('/api/status'); if(!d) return;
