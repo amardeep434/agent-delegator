@@ -10,6 +10,7 @@ from delegator.registry import load_registry
 from delegator.router import resolve_route
 from delegator.resolver import resolve_logical_model, resolve_model, build_cli_command
 from delegator.cooldowns import is_cooled_down, record_failure, record_success
+from delegator.handoff import write_handoff
 from delegator.metrics import record_delegation
 
 
@@ -109,17 +110,50 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = "timeout"
+            next_idx = i + 1
+            if next_idx < len(logical_providers):
+                next_provider = logical_providers[next_idx].split(":", 1)
+                if len(next_provider) == 2:
+                    write_handoff(
+                        from_agent=delegate_agent,
+                        to_agent=next_provider[0],
+                        task=request.task,
+                        prev_model=model,
+                        worktree=worktree,
+                    )
             continue
         except Exception as e:
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = str(e)[:200]
+            next_idx = i + 1
+            if next_idx < len(logical_providers):
+                next_provider = logical_providers[next_idx].split(":", 1)
+                if len(next_provider) == 2:
+                    write_handoff(
+                        from_agent=delegate_agent,
+                        to_agent=next_provider[0],
+                        task=request.task,
+                        prev_model=model,
+                        worktree=worktree,
+                    )
             continue
 
         if _check_failure(log_path, registry):
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = "rate_limit_or_failure"
+            next_idx = i + 1
+            if next_idx < len(logical_providers):
+                next_provider = logical_providers[next_idx].split(":", 1)
+                if len(next_provider) == 2:
+                    write_handoff(
+                        from_agent=delegate_agent,
+                        to_agent=next_provider[0],
+                        task=request.task,
+                        prev_model=model,
+                        worktree=worktree,
+                    )
             continue
 
         record_success(agent, model)
