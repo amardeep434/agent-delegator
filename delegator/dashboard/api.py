@@ -245,26 +245,36 @@ def post_config(body):
             t.start()
             return {"status": "ok", "message": f"Started: {q['task']}"}
         return {"status": "error", "message": "Invalid queue index"}
+    if key == "reset_rankings":
+        from delegator.state import rankings_path
+        save_json(str(rankings_path()), {})
+        return {"status": "ok", "message": "Rankings reset"}
     return {"status": "ok", "message": "Config saved"}
 
 
 def post_compare(body):
-    """Run side-by-side comparison of two models."""
     task = body.get("task", "")
     model_a = body.get("model_a", "opencode-go/deepseek-v4-pro")
     model_b = body.get("model_b", "claude-sonnet-4-6")
     results = {}
-
     for label, m in [("A", model_a), ("B", model_b)]:
         req = DelegationRequest(task=task, model=m, workflow="subagent-driven", no_worktree=True)
-        try:
-            r = execute(req)
+        result = {"data": None, "error": None}
+        def _run(): 
+            try: result["data"] = execute(req)
+            except Exception as e: result["error"] = str(e)[:200]
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout=30)
+        if t.is_alive():
+            results[label] = {"model": m, "error": "timeout (30s)", "success": False}
+        elif result["error"]:
+            results[label] = {"model": m, "error": result["error"], "success": False}
+        else:
+            r = result["data"]
             results[label] = {"model": m, "success": r.success, "provider": r.provider_used,
                               "duration_ms": r.duration_ms, "fallback_count": r.fallback_count,
                               "output": r.output[:2000] if r.output else ""}
-        except Exception as e:
-            results[label] = {"model": m, "error": str(e)[:200]}
-
     return {"status": "ok", "results": results}
 
 

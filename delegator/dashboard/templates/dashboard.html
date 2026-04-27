@@ -258,7 +258,7 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
         <span class="text-xs text-muted font-mono">Filter:</span>
         <select class="select text-xs" style="padding:4px 8px" onchange="filterLogs()"><option>All agents</option><option>opencode</option><option>claude</option><option>copilot</option><option>codex</option><option>antigravity</option></select>
         <select class="select text-xs" style="padding:4px 8px" onchange="filterLogs()"><option>All levels</option><option>ERROR</option><option>WARN</option><option>INFO</option><option>DEBUG</option></select>
-        <input type="text" class="input" style="max-width:200px;padding:4px 8px" placeholder="Search logs...">
+        <input type="text" class="input" style="max-width:200px;padding:4px 8px" placeholder="Search logs..." onkeyup="searchLogs(this.value)">
         <span class="text-muted text-xs ml-auto">12,847 entries</span>
         <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked class="accent-green-500" onchange="toggleAutoScroll(this)"><span class="text-2xs text-muted font-mono">Auto-scroll</span></label>
         <button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportLogs()">Export</button>
@@ -376,12 +376,12 @@ body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
       </div>
       <div class="grid grid-cols-2 gap-3">
         <div class="compare-col running">
-          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">A: opencode-go/deepseek-v4-pro</span></div><span class="text-2xs text-accent font-mono typing">running 8s</span></div>
+          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">A:</span><select class="select compare-model text-xs" style="padding:2px 6px"><option>opencode-go/deepseek-v4-pro</option><option>claude-sonnet-4-6</option><option>opencode-go/minimax-m2.7</option><option>federated-coding</option><option>federated-free</option><option>copilot/gpt-5.4</option></select></div><span class="text-2xs text-accent font-mono typing">idle</span></div>
           <div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="log g">> Writing sort_by_date function...</div><div class="log m">> Using list.sort(key=lambda x: x['date'])</div><div class="log g typing">> Testing with sample data...</div></div></div>
           <div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: 1,247</span><span>Est cost: $0.01</span></div>
         </div>
         <div class="compare-col running">
-          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">B: claude-sonnet-4-6</span></div><span class="text-2xs text-accent font-mono typing">running 8s</span></div>
+          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">B:</span><select class="select compare-model text-xs" style="padding:2px 6px"><option selected>claude-sonnet-4-6</option><option>opencode-go/deepseek-v4-pro</option><option>opencode-go/minimax-m2.7</option><option>federated-coding</option><option>federated-free</option><option>copilot/gpt-5.4-mini</option></select></div><span class="text-2xs text-accent font-mono typing">idle</span></div>
           <div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="log g">> Importing datetime module...</div><div class="log m">> Using sorted() with key=itemgetter</div><div class="log g typing">> Writing docstring...</div></div></div>
           <div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: 892</span><span>Est cost: $0.03</span></div>
         </div>
@@ -785,9 +785,12 @@ async function addPending(){const t=prompt('Task description:');if(!t)return;awa
 // === COMPARE FUNCTION ===
 async function runCompare(){
   const inp=document.querySelector('#tab-compare input');const task=inp?inp.value:'';if(!task)return;
+  const sels=document.querySelectorAll('#tab-compare select.compare-model');if(!sels.length)return;
+  const ma=sels[0]?.value||'opencode-go/deepseek-v4-pro';
+  const mb=sels[1]?.value||'claude-sonnet-4-6';
   const cols=document.querySelectorAll('#tab-compare .compare-col');
   cols.forEach(c=>{c.classList.add('running');const ty=c.querySelector('.typing');if(ty)ty.textContent='starting...'});
-  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:'opencode-go/deepseek-v4-pro',model_b:'claude-sonnet-4-6'})});
+  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});
   if(!d)return;
   ['A','B'].forEach((lbl,i)=>{const r=d.results[lbl];if(r&&cols[i]){const b=cols[i].querySelector('.t-body');if(b)b.innerHTML=`<div class="log g">Provider: ${r.provider||'—'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log ${r.success?'g':'y'}">${r.success?'✅ '+r.provider+' OK':'❌ Failed'}</div>`;cols[i].classList.replace('running','done');const ty=cols[i].querySelector('.typing');if(ty)ty.textContent=r.success?'completed':'failed'}})
 }
@@ -872,6 +875,18 @@ document.addEventListener('DOMContentLoaded', initDragSort);
 async function saveRouting(){const pri=[];document.querySelectorAll('#set-routing .cursor-grab').forEach(el=>{const n=el.querySelector('.font-mono.text-sm');if(n)pri.push(n.textContent.replace(/^\d+\.\s*/,''))});const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});alert(r?'Priority saved!':'Save failed')}
 async function saveCircuitBreaker(){const inp=document.querySelectorAll('#set-control input[type=number]');const cfg={failure_threshold:parseInt(inp[0]?.value)||3,base_minutes:parseInt(inp[1]?.value)||5,max_minutes:parseInt(inp[2]?.value)||60,worktree_ttl:parseInt(inp[3]?.value)||24};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:cfg})});alert(r?'Saved!':'Failed')}
 async function savePreferences(){const s=document.querySelectorAll('#set-general select');const p={default_model:s[0]?.value,default_workflow:s[1]?.value,auto_refresh:s[2]?.value};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'preferences',prefs:p})});alert(r?'Preferences saved!':'Save failed')}
+
+// === AUDIT FIXES - missing functions ===
+function exportLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb){const b=new Blob([tb.textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-logs.txt';a.click()}}
+function clearLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb)tb.innerHTML=''}
+function exportHistory(){const h=document.querySelector('#tab-history .glass');if(h){const b=new Blob([h.textContent],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-history.csv';a.click()}}
+async function execFromQueue(task,model){const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});if(r){liveTaskId=r.task_id;switchTab('live');refreshAll()}}
+function searchLogs(q){const rows=document.querySelectorAll('#tab-logs .t-body>div');rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'})}
+
+// === AUDIT FIXES - stub replacements ===
+async function viewDelegation(id){const d=await api('/api/metrics?days=30&limit=50');if(!d)return;const del=d.delegations.find(r=>r.id===id);if(del){const msg=`#${del.id||'?'}\nAgent: ${del.to_agent}\nModel: ${del.model}\nWorkflow: ${del.workflow}\nTask: ${del.task_type}\nDuration: ${del.duration_ms||0}ms\nFallbacks: ${del.fallback_count||0}\nSuccess: ${del.success}`;alert(msg)}else{alert('Task not found')}}
+async function sendTestWebhook(){const c=document.querySelectorAll('#set-notifications .glass')[1];const inp=c?c.querySelectorAll('input:not([type=checkbox])'):[];const url=inp[0]?.value||'';if(!url){alert('Enter a webhook URL');return};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});alert(r?'Test sent!':'Send failed')}
+async function resetRankings(){const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});alert(r?'Rankings reset':'Failed')}
 
 refreshAll();setInterval(refreshAll,5000);
 </script>
