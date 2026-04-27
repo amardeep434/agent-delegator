@@ -18,8 +18,8 @@ def test_resolve_route_implementation():
 def test_resolve_route_code_review():
     registry = load_registry(force_reload=True)
     agent, model = resolve_route(registry, "subagent-driven", "code_review")
-    assert agent == "claude"
-    assert "sonnet" in model.lower()
+    assert agent == "opencode"
+    assert model == "federated-coding"
 
 
 def test_resolve_route_fallback():

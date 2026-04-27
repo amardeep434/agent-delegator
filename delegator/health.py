@@ -45,5 +45,5 @@ def check_all_agents(registry: dict | None = None) -> dict:
             for m in models:
                 for c in m.get("capabilities", []):
                     caps.add(c)
-            announce_capabilities(agent_name, sorted(caps), [m["id"] for m in models])
+            announce_capabilities(agent_name, sorted(caps), [m.get("id", "unknown") for m in models])
     return results

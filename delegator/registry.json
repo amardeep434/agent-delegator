@@ -12,10 +12,15 @@
     "opencode": {
       "name": "OpenCode CLI",
       "available_models": [
+        {"id": "opencode-go/deepseek-v4-pro", "display": "DeepSeek v4 Pro", "capabilities": ["coding", "reasoning"]},
+        {"id": "opencode-go/minimax-m2.7", "display": "MiniMax M2.7", "capabilities": ["coding"]},
+        {"id": "opencode-go/deepseek-v4-flash", "display": "DeepSeek v4 Flash", "capabilities": ["coding", "fast", "free"]},
+        {"id": "opencode-go/kimi-k2.6", "display": "Kimi K2.6", "capabilities": ["coding"]},
+        {"id": "opencode-go/qwen3.6-plus", "display": "Qwen 3.6+", "capabilities": ["coding"]},
         {"id": "opencode/minimax-m2.5-free", "display": "Minimax Free", "capabilities": ["coding", "free"]},
+        {"id": "opencode/gpt-5-nano", "display": "GPT-5 Nano", "capabilities": ["coding", "free"]},
         {"id": "anthropic/claude-sonnet-4-6", "display": "Sonnet v4-6", "capabilities": ["coding", "reasoning"]},
         {"id": "anthropic/claude-haiku-4-5", "display": "Haiku 4.5", "capabilities": ["coding", "fast", "free"]},
-        {"id": "opencode/gpt-5-nano", "display": "GPT-5 Nano", "capabilities": ["coding", "free"]},
         {"id": "anthropic/claude-opus-4-1", "display": "Opus 4.1", "capabilities": ["coding", "reasoning"]},
         {"id": "anthropic/claude-opus-4-5", "display": "Opus 4.5", "capabilities": ["coding", "reasoning"]}
       ],
@@ -55,11 +60,25 @@
     },
     "federated-coding": {
       "display": "Any Coding Model",
-      "providers": ["claude:claude-sonnet-4-6", "opencode:opencode/minimax-m2.5-free", "opencode:opencode/gpt-5-nano", "codex:gpt-4o-mini"]
+      "providers": [
+        "opencode:opencode-go/deepseek-v4-pro",
+        "opencode:opencode-go/minimax-m2.7",
+        "opencode:opencode-go/deepseek-v4-flash",
+        "claude:claude-sonnet-4-6",
+        "opencode:opencode/minimax-m2.5-free",
+        "opencode:opencode/gpt-5-nano",
+        "codex:gpt-4o-mini"
+      ]
     },
     "federated-free": {
       "display": "Any Free Model",
-      "providers": ["opencode:opencode/minimax-m2.5-free", "opencode:opencode/gpt-5-nano", "copilot:gpt-4o-mini", "antigravity:gemini-3.1-flash"]
+      "providers": [
+        "opencode:opencode-go/deepseek-v4-flash",
+        "opencode:opencode/minimax-m2.5-free",
+        "opencode:opencode/gpt-5-nano",
+        "copilot:gpt-4o-mini",
+        "antigravity:gemini-3.1-flash"
+      ]
     }
   },
   "workflows": {
@@ -85,7 +104,7 @@
       "subagent-driven": {
         "implementation": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
         "testing": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
-        "code_review": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"},
+        "code_review": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
         "research": {"delegate_to": "claude", "preferred_model": "federated-sonnet"}
       },
       "brainstorming": {
