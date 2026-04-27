@@ -1,0 +1,183 @@
+"""CLI entry point for delegator - all commands via argparse."""
+
+import argparse
+import json
+import os
+import sys
+from delegator.models import DelegationRequest
+from delegator.executor import execute
+from delegator.registry import load_registry
+from delegator.router import resolve_route
+from delegator.resolver import resolve_logical_model
+from delegator.cooldowns import get_active_cooldowns
+from delegator.cleanup import cleanup_stale_worktrees
+from delegator.health import check_all_agents
+from delegator.capabilities import get_capabilities, discover_capabilities
+from delegator.optimizer import optimize_rankings
+from delegator.metrics import get_recent_delegations, get_success_rate
+
+
+def cmd_exec(args):
+    request = DelegationRequest(
+        task=args.task,
+        model=args.model,
+        workflow=args.workflow,
+        from_agent=args.from_agent,
+        stream=args.stream,
+        no_worktree=args.no_worktree,
+    )
+    result = execute(request)
+    output = {
+        "success": result.success,
+        "provider_used": result.provider_used,
+        "model_used": result.model_used,
+        "fallback_count": result.fallback_count,
+        "duration_ms": result.duration_ms,
+    }
+    if result.error:
+        output["error"] = result.error
+    if result.output and not args.stream:
+        output["output"] = result.output
+    print(json.dumps(output, indent=2))
+    sys.exit(0 if result.success else 1)
+
+
+def cmd_status(args):
+    cooldowns = get_active_cooldowns()
+    registry = load_registry()
+    print("=== delegator status ===")
+    print(f"Agents: {list(registry.get('agents', {}).keys())}")
+    print(f"Active cooldowns: {len(cooldowns)}")
+    if cooldowns:
+        for key, entry in cooldowns.items():
+            print(f"  {key}: cooldown until {entry['cooldown_until']}")
+    recent = get_recent_delegations(5)
+    print(f"Recent delegations: {len(recent)}")
+    for d in recent:
+        status = "OK" if d.get("success") else "FAIL"
+        print(f"  [{status}] {d.get('to_agent')}:{d.get('model')} - {d.get('task_type', '')}")
+    rate = get_success_rate(days=7)
+    print(f"7-day success rate: {rate:.1%}")
+
+
+def cmd_health(args):
+    results = check_all_agents()
+    for agent, status in results.items():
+        icon = "OK" if status["available"] else "NG"
+        print(f"[{icon}] {agent}: available={status['available']}, cli_found={status['cli_found']}")
+
+
+def cmd_routes(args):
+    registry = load_registry()
+    matrix = registry.get("routing_matrix", {}).get("_any_agent_", {})
+    for workflow, tasks in matrix.items():
+        for task, route in tasks.items():
+            print(f"{workflow}/{task} -> {route['delegate_to']}:{route['preferred_model']}")
+
+
+def cmd_model(args):
+    registry = load_registry()
+    model_name = args.model
+    providers = resolve_logical_model(registry, model_name)
+    if providers:
+        print(f"Logical model: {model_name}")
+        for p in providers:
+            print(f"  -> {p}")
+    else:
+        print(f"Model '{model_name}' - not a logical model, passed through directly.")
+
+
+def cmd_cleanup(args):
+    project = args.project or os.getcwd()
+    removed = cleanup_stale_worktrees(project, ttl_hours=args.ttl)
+    print(f"Removed {removed} stale worktrees (TTL: {args.ttl}h)")
+
+
+def cmd_capabilities(args):
+    caps = get_capabilities(args.agent) if args.agent else discover_capabilities()
+    print(json.dumps(caps, indent=2))
+
+
+def cmd_optimize(args):
+    result = optimize_rankings()
+    print("Optimized rankings:")
+    for agent, data in result.get("rankings", {}).items():
+        print(f"  {agent}: score={data['score']} (n={data['total_delegations']})")
+    print(f"Recommended priority: {result.get('recommended_priority', [])}")
+
+
+def cmd_learn(args):
+    result = optimize_rankings()
+    print(f"Learned from recent delegations. Rankings updated at {result['last_optimized']}")
+
+
+def cmd_metrics(args):
+    recent = get_recent_delegations(limit=args.limit)
+    rate = get_success_rate(agent=args.agent, days=args.days)
+    label = f"Success rate ({args.days}d"
+    if args.agent:
+        label += f", {args.agent}"
+    label += f"): {rate:.1%}"
+    print(label)
+    print(f"Recent delegations ({len(recent)}):")
+    for d in recent:
+        status = "OK" if d.get("success") else "FAIL"
+        print(f"  [{status}] {d.get('to_agent','?')}:{d.get('model','?')} - {d.get('workflow','?')}/{d.get('task_type','?')}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="delegator - Agent-agnostic AI CLI delegation")
+    sub = parser.add_subparsers(dest="command")
+
+    p_exec = sub.add_parser("exec", help="Execute delegation")
+    p_exec.add_argument("--model", required=True)
+    p_exec.add_argument("--task", required=True)
+    p_exec.add_argument("--workflow", default="subagent-driven")
+    p_exec.add_argument("--from-agent", default="")
+    p_exec.add_argument("--stream", action="store_true")
+    p_exec.add_argument("--no-worktree", action="store_true")
+    p_exec.set_defaults(func=cmd_exec)
+
+    p_status = sub.add_parser("status", help="Show system status")
+    p_status.set_defaults(func=cmd_status)
+
+    p_health = sub.add_parser("health", help="Check agent availability")
+    p_health.set_defaults(func=cmd_health)
+
+    p_routes = sub.add_parser("routes", help="List available routes")
+    p_routes.set_defaults(func=cmd_routes)
+
+    p_model = sub.add_parser("model", help="Show model details")
+    p_model.add_argument("model", metavar="model")
+    p_model.set_defaults(func=cmd_model)
+
+    p_cleanup = sub.add_parser("cleanup", help="Clean up stale worktrees")
+    p_cleanup.add_argument("--project", default=None)
+    p_cleanup.add_argument("--ttl", type=int, default=24)
+    p_cleanup.set_defaults(func=cmd_cleanup)
+
+    p_cap = sub.add_parser("capabilities", help="Show capability announcements")
+    p_cap.add_argument("--agent", default=None)
+    p_cap.set_defaults(func=cmd_capabilities)
+
+    p_opt = sub.add_parser("optimize", help="Analyze metrics and tune priorities")
+    p_opt.set_defaults(func=cmd_optimize)
+
+    p_learn = sub.add_parser("learn", help="Learn from recent delegations")
+    p_learn.set_defaults(func=cmd_learn)
+
+    p_metrics = sub.add_parser("metrics", help="Show delegation metrics")
+    p_metrics.add_argument("--agent", default=None)
+    p_metrics.add_argument("--days", type=int, default=7)
+    p_metrics.add_argument("--limit", type=int, default=20)
+    p_metrics.set_defaults(func=cmd_metrics)
+
+    args = parser.parse_args()
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

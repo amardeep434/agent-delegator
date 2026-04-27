@@ -1,0 +1,117 @@
+{
+  "version": "1.0",
+  "agents": {
+    "claude": {
+      "name": "Claude CLI",
+      "available_models": [
+        {"id": "claude-sonnet-4-6", "display": "Sonnet 4.6", "capabilities": ["coding", "reasoning"]},
+        {"id": "claude-haiku-4-5", "display": "Haiku 4.5", "capabilities": ["coding", "fast"]}
+      ],
+      "cli_template": "cd \"{worktree}\" && echo \"{task}\" | claude --print --model {model} --dangerously-skip-permissions"
+    },
+    "opencode": {
+      "name": "OpenCode CLI",
+      "available_models": [
+        {"id": "minimax-m2.5-free", "display": "Minimax Free", "capabilities": ["coding", "free"]},
+        {"id": "anthropic/claude-sonnet-4-6", "display": "Sonnet v4-6", "capabilities": ["coding", "reasoning"]},
+        {"id": "gpt-5-nano", "display": "GPT-5 Nano", "capabilities": ["coding", "free"]}
+      ],
+      "cli_template": "cd \"{worktree}\" && opencode run \"{task}\" --model {model}"
+    },
+    "copilot": {
+      "name": "GitHub Copilot CLI",
+      "available_models": [
+        {"id": "claude-sonnet-4-6", "display": "Sonnet 4.6", "capabilities": ["coding", "reasoning"]},
+        {"id": "gpt-4.1", "display": "GPT 4.1", "capabilities": ["coding"]},
+        {"id": "gpt-4o-mini", "display": "GPT 4o Mini", "capabilities": ["coding", "fast", "free"]}
+      ],
+      "cli_template": "echo \"{task}\" | gh copilot --model {model}"
+    },
+    "codex": {
+      "name": "Codex CLI",
+      "available_models": [
+        {"id": "gpt-5.4", "display": "GPT 5.4", "capabilities": ["coding", "reasoning"]},
+        {"id": "gpt-4.1", "display": "GPT 4.1", "capabilities": ["coding"]},
+        {"id": "gpt-4o-mini", "display": "GPT 4o Mini", "capabilities": ["coding", "fast", "free"]}
+      ],
+      "cli_template": "cd \"{worktree}\" && codex exec \"{task}\" --model {model}"
+    },
+    "antigravity": {
+      "name": "Antigravity (Gemini CLI)",
+      "available_models": [
+        {"id": "gemini-3.1-pro-high", "display": "Gemini 3.1 Pro", "capabilities": ["coding", "reasoning"]},
+        {"id": "gemini-3.1-flash", "display": "Gemini 3.1 Flash", "capabilities": ["coding", "fast", "free"]}
+      ],
+      "cli_template": "echo \"{task}\" | gemini -p -m {model} --approval-mode auto_edit --yolo"
+    }
+  },
+  "logical_models": {
+    "federated-sonnet": {
+      "display": "Any Sonnet",
+      "providers": ["claude:claude-sonnet-4-6", "opencode:anthropic/claude-sonnet-4-6", "copilot:claude-sonnet-4-6"]
+    },
+    "federated-coding": {
+      "display": "Any Coding Model",
+      "providers": ["claude:claude-sonnet-4-6", "opencode:minimax-m2.5-free", "opencode:gpt-5-nano", "codex:gpt-4o-mini"]
+    },
+    "federated-free": {
+      "display": "Any Free Model",
+      "providers": ["opencode:minimax-m2.5-free", "opencode:gpt-5-nano", "copilot:gpt-4o-mini", "antigravity:gemini-3.1-flash"]
+    }
+  },
+  "workflows": {
+    "brainstorming": {
+      "tasks": ["requirements", "architecture", "exploration", "design"],
+      "preferred_capabilities": ["reasoning"]
+    },
+    "writing-plans": {
+      "tasks": ["planning", "component_design"],
+      "preferred_capabilities": ["reasoning", "planning"]
+    },
+    "subagent-driven": {
+      "tasks": ["implementation", "testing", "code_review", "research"],
+      "preferred_capabilities": ["coding"]
+    },
+    "verification": {
+      "tasks": ["linting", "testing", "build", "security_audit"],
+      "preferred_capabilities": ["coding", "fast"]
+    }
+  },
+  "routing_matrix": {
+    "_any_agent_": {
+      "subagent-driven": {
+        "implementation": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
+        "testing": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
+        "code_review": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"},
+        "research": {"delegate_to": "claude", "preferred_model": "federated-sonnet"}
+      },
+      "brainstorming": {
+        "requirements": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"},
+        "architecture": {"delegate_to": "claude", "preferred_model": "federated-sonnet"},
+        "design": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"},
+        "exploration": {"delegate_to": "opencode", "preferred_model": "federated-free"}
+      },
+      "writing-plans": {
+        "planning": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"},
+        "component_design": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"}
+      },
+      "verification": {
+        "testing": {"delegate_to": "opencode", "preferred_model": "federated-coding"},
+        "linting": {"delegate_to": "opencode", "preferred_model": "federated-free"},
+        "build": {"delegate_to": "opencode", "preferred_model": "federated-free"},
+        "security_audit": {"delegate_to": "claude", "preferred_model": "claude-sonnet-4-6"}
+      }
+    }
+  },
+  "provider_priority": ["claude", "opencode", "copilot", "codex", "antigravity"],
+  "rate_limit_patterns": [
+    "429", "rate.?limit", "too.?many.?requests", "rate_limit_exceeded",
+    "quota.?exceeded", "max.?tokens", "tpm.?limit", "rpm.?limit",
+    "hit.*limit", "limit.*reset", "overloaded", "insufficient_quota"
+  ],
+  "cooldown": {
+    "failure_threshold": 3,
+    "base_minutes": 5,
+    "max_minutes": 60
+  }
+}
