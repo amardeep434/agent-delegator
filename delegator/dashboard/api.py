@@ -24,6 +24,30 @@ _notification_config = {
     "webhooks": {"slack_url": "", "events": []},
 }
 _current_project = os.getcwd()
+
+def _discover_projects():
+    projects = []
+    for base in [os.path.expanduser("~"), os.path.expanduser("~/projects")]:
+        if not os.path.isdir(base): continue
+        try:
+            for e in os.listdir(base):
+                fp = os.path.join(base, e)
+                if os.path.isdir(fp) and os.path.exists(os.path.join(fp, ".delegator.json")):
+                    projects.append({"name": e, "path": fp})
+        except PermissionError: pass
+    cwd = os.getcwd()
+    if os.path.exists(os.path.join(cwd, ".delegator.json")) and cwd not in [p["path"] for p in projects]:
+        projects.insert(0, {"name": os.path.basename(cwd), "path": cwd})
+    return projects[:10]
+
+def get_projects():
+    return {"projects": _discover_projects(), "current": _current_project}
+
+def post_project(body):
+    global _current_project
+    p = body.get("path", "")
+    if os.path.isdir(p): _current_project = p; return {"status": "ok", "project": os.path.basename(p)}
+    return {"status": "error", "message": "Not found"}
 _last_cleanup = {}
 
 def _state_dir():
