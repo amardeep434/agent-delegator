@@ -210,7 +210,7 @@ async function renderSettingsSub(){
 }
 
 // === TAB SWITCH ===
-function switchTab(t){activeTab=t;document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});if(t==='live')renderLive();if(t==='logs'){renderLogs();_logEntries=[]}if(t==='history')renderHistory();if(t==='analytics')renderAnalytics();if(t==='compare')renderCompare();if(t==='queue')renderQueue();if(t==='exec')renderExec();if(t==='settings')renderSettings()}
+function switchTab(t){activeTab=t;document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});if(t==='live')renderLive();if(t==='logs'){renderLogs();_logEntries=[]}if(t==='history')renderHistory();if(t==='analytics')renderAnalytics();if(t==='compare')renderCompare();if(t==='queue')renderQueue();if(t==='exec')renderExec();if(t==='settings')renderSettings();if(window.tailwind)tailwind.refresh()}
 
 // === ACTIONS ===
 async function execTask(){const t=document.getElementById('exec-task');if(!t?.value)return switchTab('exec');const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t.value,model:document.getElementById('exec-model')?.value||'federated-coding',workflow:document.getElementById('exec-wf')?.value||'subagent-driven',from_agent:document.getElementById('exec-from')?.value||'',stream:document.getElementById('exec-stream')?.checked||false,no_worktree:document.getElementById('exec-no-wt')?.checked||false})});if(r){liveTaskId=r.task_id;switchTab('live');renderAll();showToast('Task started')}}
@@ -245,8 +245,8 @@ function exportCSV(){exportText('analytics')}
 // === INIT ===
 (async function(){
   document.getElementById('tab-bar').innerHTML=TABS.map(t=>`<div class="tab ${t===activeTab?'active':''}" onclick="switchTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('');
-  await loadProjects();await renderAll();switchTab('live');
-  setInterval(renderAll,5000);setInterval(()=>{if(activeTab==='logs')_logEntries=[];renderLogs()},8000);setInterval(()=>{if(activeTab==='live'&&liveTaskId)loadLiveOutput()},4000);
+  await loadProjects();await renderAll();switchTab('live');if(window.tailwind)tailwind.refresh();
+  setInterval(()=>{renderAll();if(window.tailwind)tailwind.refresh()},5000);setInterval(()=>{if(activeTab==='logs')_logEntries=[];renderLogs();if(window.tailwind)tailwind.refresh()},8000);setInterval(()=>{if(activeTab==='live'&&liveTaskId)loadLiveOutput()},4000);
 })();
 document.addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea'))return;const m={'l':'live','o':'logs','h':'history','a':'analytics','c':'compare','q':'queue','e':'exec','s':'settings'};if(m[e.key])switchTab(m[e.key]);if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus()}if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();switchTab('exec');setTimeout(()=>document.getElementById('exec-task')?.focus(),200)}if(e.key==='?'){e.preventDefault();showToast('Keys: L Live O Logs H History A Analytics C Compare Q Queue E Exec S Settings · 1-3 Tasks · F7 Project · ⌘K Exec · Esc Close')}})
 </script>
