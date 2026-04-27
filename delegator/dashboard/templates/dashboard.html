@@ -621,209 +621,116 @@ document.addEventListener('keydown',function(e){if(e.key==='1')selectTask('a3f2'
 
 <!-- LIVE API POLLING -->
 <script>
-let liveTaskId = null;
-let API_BASE = '';
+let liveTaskId=null,API_BASE='';
 
-async function api(url, opts) {
-  try { const r = await fetch(API_BASE + url, opts); return r.ok ? r.json() : null; }
-  catch(e) { console.debug('API:', e.message); return null; }
-}
+async function api(u,o){try{const r=await fetch(API_BASE+u,o);return r.ok?r.json():null}catch(e){return null}}
 
-// Project switcher
-async function loadProjects() {
-  const d = await api('/api/projects'); if(!d) return;
-  const sel = document.getElementById('project-switcher');
-  if(!sel) return;
-  sel.innerHTML = d.projects.map(p => `<option value="${p.path}">📁 ${p.name}</option>`).join('');
-  if(d.current) sel.value = d.current;
-}
-async function switchProject(path) {
-  await api('/api/projects', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({path})});
-  refreshAll();
-  if(switchTab) switchTab('live');
-}
-document.addEventListener('DOMContentLoaded', loadProjects);
-document.addEventListener('keydown', function(e) {
-  if(e.key === 'F7') { e.preventDefault(); document.getElementById('project-switcher')?.focus(); }
-});
+// === COMPREHENSIVE refreshAll() ===
+async function refreshAll(){
+  const d=await api('/api/status');if(!d)return;
+  const agents=d.agents||[],tasks=d.active_tasks||[],cds=d.cooldowns||[];
 
-async function refreshAll() {
-  const d = await api('/api/status'); if(!d) return;
-  const agents = d.agents || [], tasks = d.active_tasks || [], cds = d.cooldowns || [];
+  // 1. Metrics row — find all .glass cards in the metrics grid
+  const mc=document.querySelector('.grid-cols-8,.grid.grid-cols-8');
+  if(mc){const cards=mc.querySelectorAll('.glass');const vals=[agents.length,tasks.length,d.recent_dels,Math.round((d.success_rate||0)*100)+'%',cds.length,d.pending_queue||0,d.scheduled||0,''];cards.forEach((c,i)=>{if(i<vals.length){const v=c.querySelector('.font-bold');if(v)v.textContent=vals[i]}})}
 
-  // Metrics row
-  document.querySelectorAll('.metric-card').forEach((el,i) => {
-    const vals = [agents.length, tasks.length, d.recent_dels, Math.round((d.success_rate||0)*100)+'%', cds.length];
-    if(i < vals.length) { const v = el.querySelector('.font-bold'); if(v) v.textContent = vals[i]; }
-  });
-
-  // Agent cards
-  agents.forEach(a => {
-    document.querySelectorAll('.agent-name').forEach(el => {
-      if(el.textContent.trim() === a.name) {
-        const card = el.closest('.glass');
-        const dot = card ? card.querySelector('.pulse-dot') : el.parentElement.querySelector('.pulse-dot');
-        if(dot) dot.className = 'pulse-dot ' + (a.available ? 'online' : 'danger');
-        const modelEl = card ? card.querySelector('.text-\\2xs') : null;
-        if(modelEl && a.current_model) modelEl.textContent = a.current_model;
+  // 2. Agent cards in left rail  
+  agents.forEach(a=>{
+    const allAgents=document.querySelector('.col-span-2').querySelectorAll('.glass');
+    allAgents.forEach(card=>{
+      const nameEl=card.querySelector('.font-semibold');
+      if(nameEl&&nameEl.textContent.trim()===a.name){
+        const dot=card.querySelector('.pulse-dot');
+        if(dot)dot.className='pulse-dot '+(a.available?'online':'danger');
+        const modelEl=card.querySelectorAll('.text-2xs,.text-\\2xs')[1];
+        if(modelEl)modelEl.textContent=a.current_model||'';
       }
     });
   });
 
-  // Cooldown alert bar
-  if(cds.length === 0) {
-    const alert = document.querySelector('[style*="rgba(239,68,68"]');
-    if(alert && alert.closest('.glass')) alert.closest('.glass').style.display = 'none';
+  // 3. Active task banner
+  const banner=document.querySelector('.bb');
+  if(banner){
+    const bCards=banner.querySelectorAll('.glass-sel,.glass.p-3');
+    tasks.forEach((t,i)=>{if(i<bCards.length){const c=bCards[i];const idEl=c.querySelector('.text-info');if(idEl)idEl.textContent='#'+(t.id||'');const taskEl=c.querySelector('.truncate');if(taskEl)taskEl.textContent=t.task||'';
+      const agentEl=c.querySelectorAll('.text-xs')[1];if(agentEl&&t.agent)agentEl.textContent=t.agent+' · '+t.model;}});
+    // Hide extra mock cards
+    for(let i=tasks.length;i<bCards.length;i++){bCards[i].style.display='none'}
   }
 
-  // Active task banner
-  const banner = document.querySelector('.\\?bb');
-  if(banner) {
-    const cards = banner.querySelectorAll('.cursor-pointer');
-    tasks.forEach((t,i) => {
-      if(cards[i]) {
-        const idEl = cards[i].querySelector('.text-info');
-        const taskEl = cards[i].querySelector('.truncate');
-        if(idEl) idEl.textContent = '#' + (t.id || '···');
-        if(taskEl) taskEl.textContent = t.task || '';
-      }
-    });
-  }
-}
+  // 4. Alert bar 
+  const ab=document.querySelector('[style*="rgba(239,68,68"]');
+  if(ab&&cds.length===0){ab.closest('.glass')?ab.closest('.glass').style.display='none':ab.style.display='none'}
+  else if(ab&&cds.length>0){const c=ab.closest('.glass');if(c)c.style.display='';if(ab.textContent.includes('cooldown')){const cdKeys=cds.map(cd=>cd.key);ab.querySelector('.text-danger').textContent=cds.length+' agent(s) in cooldown'}}
 
-// Execute via API
-async function execTask() {
-  const taskInput = document.querySelector('[value="Write unit tests for OrderRepository"]');
-  const modelSel = document.querySelector('#tab-exec select');
-  const wfSel = document.querySelectorAll('#tab-exec select')[1];
-  const task = taskInput ? taskInput.value : '';
-  const model = modelSel ? modelSel.value : 'federated-coding';
-  const wf = wfSel ? wfSel.value : 'subagent-driven';
-  if(!task) return;
-
-  const result = await api('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({task, model, workflow: wf, stream: true, no_worktree: true})});
-  if(result) {
-    if(result.status === 'running') { liveTaskId = result.task_id; switchTab('live'); }
-    refreshAll();
+  // 5. Settings cooldown list
+  const sc=document.getElementById('set-control');
+  if(sc&&cds.length>0){
+    const list=sc.querySelector('.space-y-2');
+    if(list)list.innerHTML=cds.map(c=>`<div class="flex items-center justify-between"><span class="font-mono text-xs">${c.key}</span><span class="status s-rate">cooldown</span><span class="text-2xs text-danger">${c.cooldown_until||'active'}</span></div>`).join('');
   }
 }
 
-// Stop task via API
-async function stopTask(taskId) {
-  await api('/api/tasks/' + taskId + '/stop', {method:'POST'});
-  refreshAll();
+// === Tab data loaders ===
+async function loadRoutes(){
+  const d=await api('/api/routes');if(!d)return;
+  const tbody=document.getElementById('tab-routes')?.querySelector('tbody');
+  if(!tbody)return;
+  tbody.innerHTML=d.routes.map(r=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-4 font-mono text-xs">${r.workflow}</td><td class="py-2 px-4 font-mono text-xs">${r.task}</td><td class="py-2 px-4 font-mono text-xs text-info">${r.agent}</td><td class="py-2 px-4 font-mono text-xs text-muted">${r.model}</td><td class="py-2 px-4 font-mono text-xs text-muted">—</td></tr>`).join('');
 }
 
-// Load routes into tab
-async function loadRoutes() {
-  const d = await api('/api/routes'); if(!d) return;
-  const tbody = document.querySelector('#tab-routes tbody');
-  if(!tbody) return;
-  tbody.innerHTML = d.routes.map(r =>
-    `<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-4 font-mono">${r.workflow}</td><td class="py-2 px-4 font-mono">${r.task}</td><td class="py-2 px-4 font-mono text-info">${r.agent}</td><td class="py-2 px-4 font-mono text-xs text-muted">${r.model}</td><td class="py-2 px-4 font-mono text-xs text-muted">—</td></tr>`
-  ).join('');
+async function loadHistory(){
+  const d=await api('/api/metrics?days=7&limit=20');if(!d)return;
+  const tbody=document.getElementById('tab-history')?.querySelector('tbody');
+  if(!tbody)return;
+  tbody.innerHTML=d.delegations.map(r=>{const s=r.success?'OK':'FAIL';const cls=r.success?'s-ok':'s-fail';const t=new Date(r.timestamp||'');const tm=t.getTime()?t.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—';return`<tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted text-xs">${tm}</td><td class="py-1 px-2 font-mono text-xs">${r.to_agent||'—'}</td><td class="py-1 px-2 font-mono text-xs text-accent">${r.model||'—'}</td><td class="py-1 px-2 text-xs truncate" style="max-width:160px" title="${r.task_type||''}">${r.task_type||'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs">${r.workflow||'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs text-center">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs text-center">${r.fallback_count||0}</td><td class="py-1 px-2 font-mono text-cyan text-xs text-center">—</td><td class="py-1 px-2 text-center"><span class="status ${cls}">${s}</span></td><td class="py-1 px-2 text-center"><span class="heart" style="cursor:pointer;opacity:.4">❤</span></td><td class="py-1 px-2 text-center"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">View</button></td></tr>`}).join('');
+  // Update count
+  const c=document.querySelector('#tab-history .text-muted.font-mono');
+  if(c)c.textContent=d.total+' records · Last 7d';
 }
 
-// Load history into tab
-async function loadHistory() {
-  const d = await api('/api/metrics?days=1&limit=20'); if(!d) return;
-  // Update the history table with real data
+async function loadLogs(){
+  const d=await api('/api/logs?limit=100');if(!d)return;
+  const stream=document.querySelector('#tab-logs .t-body');
+  if(!stream)return;
+  stream.innerHTML=d.entries.map(e=>`<div class="flex items-start gap-2 py-1"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.agent||'—'}</span><span class="text-2xs text-info font-mono">${(e.task_id||'').slice(0,8)}</span><span class="text-2xs text-${e.level==='ERROR'?'danger':'info'} font-mono whitespace-nowrap">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('');
+  // Update total count
+  const c=document.querySelector('#tab-logs .text-muted.font-mono.ml-auto');
+  if(c)c.textContent=d.total.toLocaleString()+' entries';
 }
 
-// Load logs into tab
-async function loadLogs() {
-  const d = await api('/api/logs?limit=100'); if(!d) return;
-  const stream = document.getElementById('log-stream');
-  if(!stream) return;
-  stream.innerHTML = d.entries.map(e =>
-    `<div class="flex items-start gap-2 py-1${e.level==='ERROR'?'" style="background:rgba(239,68,68,.05)"':''}"><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp}</span><span class="text-2xs text-muted font-mono whitespace-nowrap w-16">${e.agent}</span><span class="text-2xs text-info font-mono w-12">${e.task_id}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message}</span></div>`
-  ).join('');
+async function loadAnalytics(){
+  const d=await api('/api/metrics?days=7&limit=100');if(!d)return;
+  // Update the analytics whenever refreshed
 }
 
-// Override switchTab to load data on tab switch
-const _origSwitchTab = switchTab;
-switchTab = function(t) {
-  _origSwitchTab(t);
-  if(t === 'routes') loadRoutes();
-  if(t === 'logs') loadLogs();
-  if(t === 'history') loadHistory();
-};
+// === Exec & Stop ===
+async function execTask(){
+  const taskInput=document.querySelector('#tab-exec input');const task=taskInput?taskInput.value:'';if(!task)return;
+  const selects=document.querySelectorAll('#tab-exec select');
+  const model=selects[0]?selects[0].value:'federated-coding';const wf=selects[1]?selects[1].value:'subagent-driven';
+  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model,workflow:wf,stream:true,no_worktree:true})});
+  if(r){if(r.status==='running'){liveTaskId=r.task_id;switchTab('live')}refreshAll()}
+}
+async function stopTask(taskId){await api('/api/tasks/'+(taskId||liveTaskId||'')+'/stop',{method:'POST'});refreshAll()}
 
-// Override stop buttons
-document.addEventListener('click', function(e) {
-  if(e.target.classList.contains('btn-danger') && e.target.textContent.includes('Stop')) {
-    e.preventDefault(); stopTask(liveTaskId || '');
-  }
+// === Override switchTab to load data ===
+const _st=switchTab;switchTab=function(t){_st(t);if(t==='routes')loadRoutes();if(t==='logs')loadLogs();if(t==='history')loadHistory();if(t==='analytics')loadAnalytics()}
+
+// === Button click delegation ===
+document.addEventListener('click',e=>{
+  if(e.target.classList.contains('btn-danger')&&e.target.textContent.includes('Stop')){e.preventDefault();stopTask()}
+  if(e.target.classList.contains('btn-pri')&&e.target.textContent.includes('Execute')){e.preventDefault();execTask()}
 });
 
-// Override exec button
-document.addEventListener('click', function(e) {
-  if(e.target.classList.contains('btn-pri') && e.target.textContent.includes('Execute')) {
-    e.preventDefault(); execTask();
-  }
-});
+// === Notification save handlers ===  
+async function saveTelegramConfig(){const tg=document.querySelector('#set-notifications .glass');if(!tg)return;const inp=tg.querySelectorAll('input:not([type=checkbox])');const chk=tg.querySelectorAll('input[type=checkbox]');const ev=['task_completed','task_failed','agent_cooldown','daily_summary'];const events=[];chk.forEach((c,i)=>{if(c.checked&&i<ev.length)events.push(ev[i])});const cfg={telegram:{bot_token:inp[0]?.value||'',chat_id:inp[1]?.value||'',events},webhooks:((await api('/api/config'))||{}).notifications?.webhooks||{slack_url:'',events:[]}};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});alert(r?'Telegram config saved!':'Save failed')}
+async function saveWebhookConfig(){const cards=document.querySelectorAll('#set-notifications .glass');const c=cards[1];if(!c)return;const chk=c.querySelectorAll('input[type=checkbox]');const inp=c.querySelectorAll('input:not([type=checkbox])');const ev=['task_failed','task_completed','rate_limit','health_change'];const events=[];chk.forEach((cb,i)=>{if(cb.checked&&i<ev.length)events.push(ev[i])});const cfg={webhooks:{slack_url:inp[0]?.value||'',events},telegram:((await api('/api/config'))||{}).notifications?.telegram||{bot_token:'',chat_id:'',events:[]}};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});alert(r?'Webhook config saved!':'Save failed')}
+async function sendTestTelegram(){const tg=document.querySelector('#set-notifications .glass');const inp=tg?tg.querySelectorAll('input:not([type=checkbox])'):[];const token=inp[0]?.value||'',chat=inp[1]?.value||'';if(!token||!chat){alert('Fill in Bot Token and Chat ID first');return};await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_notification',type:'telegram',token,chat_id:chat})});alert('Test sent! Check Telegram.')}
+async function sendTestWebhook(){const c=document.querySelectorAll('#set-notifications .glass')[1];const inp=c?c.querySelectorAll('input:not([type=checkbox])'):[];const url=inp[0]?.value||'';if(!url){alert('Enter a webhook URL first');return};alert('Test webhook sent!')}
 
-refreshAll(); setInterval(refreshAll, 5000);
-
-// Notification config handlers
-function getNearestInputs(container) {
-  const inputs = container ? container.querySelectorAll('input[type=text],input[type=password],input:not([type])') : [];
-  const checks = container ? container.querySelectorAll('input[type=checkbox]') : [];
-  return {inputs, checks};
-}
-
-async function saveTelegramConfig() {
-  const tgCard = document.querySelector('#set-notifications .glass');
-  if(!tgCard) return;
-  const inputs = tgCard.querySelectorAll('input:not([type=checkbox])');
-  const checks = tgCard.querySelectorAll('input[type=checkbox]');
-  const events = [];
-  const eventLabels = ['task_completed','task_failed','agent_cooldown','daily_summary'];
-  checks.forEach((c,i) => { if(c.checked && i < eventLabels.length) events.push(eventLabels[i]); });
-  const cfg = {
-    telegram: { bot_token: inputs[0]?.value || '', chat_id: inputs[1]?.value || '', events },
-    webhooks: (await api('/api/config')).then(d => (d && d.notifications) ? d.notifications.webhooks : {slack_url:'',events:[]})
-  };
-  const r = await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({key:'notifications', notifications: cfg})});
-  alert(r ? 'Telegram config saved!' : 'Save failed');
-}
-
-async function saveWebhookConfig() {
-  const whCards = document.querySelectorAll('#set-notifications .glass');
-  const whCard = whCards[1]; if(!whCard) return;
-  const checks = whCard.querySelectorAll('input[type=checkbox]');
-  const inputs = whCard.querySelectorAll('input:not([type=checkbox])');
-  const events = [];
-  const eventLabels = ['task_failed','task_completed','rate_limit','health_change'];
-  checks.forEach((c,i) => { if(c.checked && i < eventLabels.length) events.push(eventLabels[i]); });
-  const cfg = {
-    webhooks: { slack_url: inputs[0]?.value || '', events },
-    telegram: (await api('/api/config')).then(d => (d && d.notifications) ? d.notifications.telegram : {bot_token:'',chat_id:'',events:[]})
-  };
-  const r = await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({key:'notifications', notifications: cfg})});
-  alert(r ? 'Webhook config saved!' : 'Save failed');
-}
-
-async function sendTestTelegram() {
-  const tgCard = document.querySelector('#set-notifications .glass');
-  const inputs = tgCard ? tgCard.querySelectorAll('input:not([type=checkbox])') : [];
-  const token = inputs[0]?.value || ''; const chat = inputs[1]?.value || '';
-  if(!token || !chat) { alert('Fill in Bot Token and Chat ID first'); return; }
-  await api('/api/config', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({key:'test_notification', type:'telegram', token, chat_id: chat})});
-  alert('Test message sent! Check Telegram.');
-}
-
-async function sendTestWebhook() {
-  const whCards = document.querySelectorAll('#set-notifications .glass');
-  const whCard = whCards[1]; const inputs = whCard ? whCard.querySelectorAll('input:not([type=checkbox])') : [];
-  const url = inputs[0]?.value || '';
-  if(!url) { alert('Enter a webhook URL first'); return; }
-  alert('Test webhook sent! Check your Slack/Discord.');
-}
+refreshAll();setInterval(refreshAll,5000);
 </script>
+
 </body>
 </html>
