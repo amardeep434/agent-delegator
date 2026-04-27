@@ -40,7 +40,10 @@ def _check_failure(log_path: str, registry: dict) -> bool:
 
 
 def _create_worktree(project_root: str, task_id: str) -> Path:
-    """Create a git worktree for isolated delegation."""
+    """Create a git worktree for isolated delegation.
+    
+    Falls back to mkdir if worktree creation fails (e.g., not a git repo).
+    """
     delegation_dir = Path(project_root) / ".delegation" / "worktrees"
     delegation_dir.mkdir(parents=True, exist_ok=True)
     worktree_path = delegation_dir / task_id
@@ -75,15 +78,14 @@ def _try_handoff(delegate_agent, logical_providers, i, task, model, worktree):
 
 def _setup_signal_handler(worktree_path: str, project_root: str):
     def cleanup_handler(signum, frame):
-        if os.path.exists(worktree_path):
-            try:
-                subprocess.run(
-                    ["git", "-C", project_root, "worktree", "remove", "--force", worktree_path],
-                    capture_output=True, timeout=10
-                )
-            except Exception:
-                pass
-        os._exit(1)
+        try:
+            subprocess.run(
+                ["git", "-C", project_root, "worktree", "remove", "--force", worktree_path],
+                capture_output=True, timeout=10
+            )
+        except Exception:
+            pass
+        sys.exit(1)
     signal.signal(signal.SIGINT, cleanup_handler)
     signal.signal(signal.SIGTERM, cleanup_handler)
 

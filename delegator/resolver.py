@@ -1,5 +1,6 @@
 """Model name resolver - normalizes model names per agent and resolves logical models to concrete providers."""
 
+import shlex
 from delegator.registry import get_agent, get_logical_model
 
 
@@ -64,13 +65,18 @@ def resolve_model(registry: dict, model_name: str, agent: str) -> str:
 
 
 def build_cli_command(registry: dict, agent: str, model: str, task: str, worktree: str) -> str:
-    """Build the full CLI command for executing a task via a specific agent."""
+    """Build the full CLI command for executing a task via a specific agent.
+    
+    All user-controlled values are shell-escaped to prevent command injection.
+    """
     agent_def = get_agent(registry, agent)
     if not agent_def:
         raise ValueError(f"Unknown agent: {agent}")
 
     template = agent_def["cli_template"]
     resolved = resolve_model(registry, model, agent)
-    escaped_task = task.replace('"', '\\"')
-
-    return template.format(model=resolved, task=escaped_task, worktree=worktree)
+    return template.format(
+        model=shlex.quote(resolved),
+        task=shlex.quote(task),
+        worktree=shlex.quote(worktree),
+    )

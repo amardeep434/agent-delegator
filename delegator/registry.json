@@ -7,7 +7,7 @@
         {"id": "claude-sonnet-4-6", "display": "Sonnet 4.6", "capabilities": ["coding", "reasoning"]},
         {"id": "claude-haiku-4-5", "display": "Haiku 4.5", "capabilities": ["coding", "fast"]}
       ],
-      "cli_template": "cd \"{worktree}\" && echo \"{task}\" | claude --print --model {model} --dangerously-skip-permissions"
+      "cli_template": "cd {worktree} && echo {task} | claude --print --model {model} --dangerously-skip-permissions"
     },
     "opencode": {
       "name": "OpenCode CLI",
@@ -20,7 +20,7 @@
         {"id": "opencode/minimax-m2.5-free", "display": "Minimax Free", "capabilities": ["coding", "free"]},
         {"id": "opencode/gpt-5-nano", "display": "GPT-5 Nano", "capabilities": ["coding", "free"]}
       ],
-      "cli_template": "cd \"{worktree}\" && opencode run \"{task}\" --model {model}"
+      "cli_template": "cd {worktree} && opencode run {task} --model {model}"
     },
     "copilot": {
       "name": "GitHub Copilot CLI",
@@ -34,7 +34,7 @@
         {"id": "gpt-4.1", "display": "GPT 4.1", "capabilities": ["coding"]},
         {"id": "gpt-5-mini", "display": "GPT-5 Mini", "capabilities": ["coding", "fast", "free"]}
       ],
-      "cli_template": "echo \"{task}\" | copilot -p \"{task}\" --model {model}"
+      "cli_template": "echo {task} | copilot -p {task} --model {model}"
     },
     "codex": {
       "name": "Codex CLI",
@@ -43,7 +43,7 @@
         {"id": "gpt-4.1", "display": "GPT 4.1", "capabilities": ["coding"]},
         {"id": "gpt-4o-mini", "display": "GPT 4o Mini", "capabilities": ["coding", "fast", "free"]}
       ],
-      "cli_template": "cd \"{worktree}\" && codex exec \"{task}\" --model {model}"
+      "cli_template": "cd {worktree} && codex exec {task} --model {model}"
     },
     "antigravity": {
       "name": "Antigravity (Gemini CLI)",
@@ -51,7 +51,7 @@
         {"id": "gemini-3.1-pro-high", "display": "Gemini 3.1 Pro", "capabilities": ["coding", "reasoning"]},
         {"id": "gemini-3.1-flash", "display": "Gemini 3.1 Flash", "capabilities": ["coding", "fast", "free"]}
       ],
-      "cli_template": "echo \"{task}\" | gemini -p \"{task}\" -m {model} --approval-mode auto_edit"
+      "cli_template": "echo {task} | gemini -p {task} -m {model} --approval-mode auto_edit"
     }
   },
   "logical_models": {

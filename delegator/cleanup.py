@@ -1,5 +1,6 @@
 """Worktree cleanup - removes stale worktrees past TTL."""
 
+import os
 import shutil
 import subprocess
 import time
@@ -17,17 +18,20 @@ def cleanup_stale_worktrees(project_root: str, ttl_hours: int = 24) -> int:
     removed = 0
 
     for entry in wdir.iterdir():
-        if entry.is_dir():
-            try:
-                mtime = entry.stat().st_mtime
-                if mtime < cutoff:
-                    shutil.rmtree(entry)
-                    subprocess.run(
-                        ["git", "-C", project_root, "worktree", "prune"],
-                        capture_output=True
-                    )
-                    removed += 1
-            except Exception:
-                pass
+        try:
+            if entry.is_symlink():
+                continue
+            if not entry.is_dir():
+                continue
+            mtime = entry.stat().st_mtime
+            if mtime < cutoff:
+                shutil.rmtree(entry)
+                subprocess.run(
+                    ["git", "-C", project_root, "worktree", "prune"],
+                    capture_output=True
+                )
+                removed += 1
+        except Exception:
+            pass
 
     return removed

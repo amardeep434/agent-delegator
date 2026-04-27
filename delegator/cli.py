@@ -18,10 +18,35 @@ from delegator.optimizer import optimize_rankings
 from delegator.metrics import get_recent_delegations, get_success_rate
 
 
+def _safe_path(unsafe: str, fallback_root: str | None = None) -> Path:
+    """Validate a user-supplied path stays within a safe base directory."""
+    root = Path(fallback_root or os.getcwd()).resolve()
+    target = Path(unsafe).expanduser().resolve()
+    try:
+        target.relative_to(root)
+    except ValueError:
+        raise ValueError(f"Path '{unsafe}' is outside allowed directory: {root}")
+    return target
+
+
+def _safe_project(path: str | None) -> str:
+    """Resolve project path safely."""
+    return str(Path(path or os.getcwd()).expanduser().resolve())
+
+
+def _safe_suite(name: str | None) -> str | None:
+    """Validate suite name against allowed characters."""
+    if name is None:
+        return None
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', name):
+        raise ValueError(f"Invalid suite name: '{name}'. Use only letters, numbers, underscores.")
+    return name
+
 def cmd_exec(args):
     task = args.task_override or args.task or ""
     if args.from_file:
-        task = Path(args.from_file).read_text().strip()
+        task = _safe_path(args.from_file).read_text().strip()
     if args.output:
         args.stream = False
 
@@ -60,7 +85,7 @@ def cmd_exec(args):
 
     output_json = json.dumps(output, indent=2)
     if args.output:
-        Path(args.output).write_text(output_json)
+        _safe_path(args.output).write_text(output_json)
         print(f"Output written to {args.output}")
     else:
         print(output_json)
@@ -113,7 +138,7 @@ def cmd_model(args):
 
 
 def cmd_cleanup(args):
-    project = args.project or os.getcwd()
+    project = _safe_project(args.project)
     removed = cleanup_stale_worktrees(project, ttl_hours=args.ttl)
     print(f"Removed {removed} stale worktrees (TTL: {args.ttl}h)")
 
@@ -191,7 +216,8 @@ def cmd_test(args):
     test_dir = Path(__file__).resolve().parent.parent / "tests"
     cmd = ["python", "-m", "pytest", str(test_dir), "-v"]
     if args.suite:
-        cmd = ["python", "-m", "pytest", str(test_dir / f"test_{args.suite}.py"), "-v"]
+        suite = _safe_suite(args.suite)
+        cmd = ["python", "-m", "pytest", str(test_dir / f"test_{suite}.py"), "-v"]
     sp.run(cmd)
 
 
