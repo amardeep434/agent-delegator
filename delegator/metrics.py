@@ -20,11 +20,29 @@ def _get_db() -> sqlite3.Connection:
             success INTEGER,
             fallback_count INTEGER,
             duration_ms INTEGER,
+            cost REAL DEFAULT 0,
+            failure_type TEXT DEFAULT '',
+            liked INTEGER DEFAULT 0,
             timestamp TEXT DEFAULT (datetime('now'))
         )
     """)
     conn.commit()
+    _migrate_db(conn)
     return conn
+
+
+def _migrate_db(conn: sqlite3.Connection) -> None:
+    """Add any missing columns to the delegations table."""
+    existing = {
+        row[1] for row in conn.execute("PRAGMA table_info(delegations)")
+    }
+    if "cost" not in existing:
+        conn.execute("ALTER TABLE delegations ADD COLUMN cost REAL DEFAULT 0")
+    if "failure_type" not in existing:
+        conn.execute("ALTER TABLE delegations ADD COLUMN failure_type TEXT DEFAULT ''")
+    if "liked" not in existing:
+        conn.execute("ALTER TABLE delegations ADD COLUMN liked INTEGER DEFAULT 0")
+    conn.commit()
 
 
 def record_delegation(
@@ -38,17 +56,59 @@ def record_delegation(
     success: bool,
     fallback_count: int,
     duration_ms: int,
+    cost: float = 0,
+    failure_type: str = "",
 ) -> None:
     """Record a delegation result."""
     conn = _get_db()
     conn.execute(
         """INSERT OR REPLACE INTO delegations
-           (id, from_agent, to_agent, model, provider_used, workflow, task_type, success, fallback_count, duration_ms)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (request_id, from_agent, to_agent, model, provider_used, workflow, task_type, int(success), fallback_count, duration_ms),
+           (id, from_agent, to_agent, model, provider_used, workflow, task_type, success, fallback_count, duration_ms, cost, failure_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (request_id, from_agent, to_agent, model, provider_used, workflow, task_type, int(success), fallback_count, duration_ms, cost, failure_type),
     )
     conn.commit()
     conn.close()
+
+
+def set_liked(delegation_id: str, liked: bool) -> None:
+    """Update the liked status for a delegation."""
+    conn = _get_db()
+    conn.execute(
+        "UPDATE delegations SET liked = ? WHERE id = ?",
+        (int(liked), delegation_id),
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_liked(delegation_id: str) -> bool:
+    """Get the liked status for a delegation."""
+    conn = _get_db()
+    row = conn.execute(
+        "SELECT liked FROM delegations WHERE id = ?",
+        (delegation_id,),
+    ).fetchone()
+    conn.close()
+    return bool(row[0]) if row else False
+
+
+def classify_failure(success: bool, fallback_count: int, error: str | None) -> str:
+    """Classify a failure based on success, fallback count, and error message."""
+    if success:
+        return ""
+    if error is None:
+        error = ""
+    error_lower = error.lower()
+    if "quota" in error_lower or "exceeded" in error_lower:
+        return "quota_exceeded"
+    if "timeout" in error_lower or "timed out" in error_lower:
+        return "timeout"
+    if "model" in error_lower and ("not found" in error_lower or "not available" in error_lower or "unknown" in error_lower):
+        return "model_not_found"
+    if fallback_count > 0:
+        return "rate_limit"
+    return "exception"
 
 
 def get_success_rate(agent: str | None = None, days: int = 7) -> float:
@@ -79,7 +139,7 @@ def get_recent_delegations(limit: int = 20) -> list[dict]:
         (limit,),
     ).fetchall()
     conn.close()
-    cols = ["id", "from_agent", "to_agent", "model", "provider_used", "workflow", "task_type", "success", "fallback_count", "duration_ms", "timestamp"]
+    cols = ["id", "from_agent", "to_agent", "model", "provider_used", "workflow", "task_type", "success", "fallback_count", "duration_ms", "cost", "failure_type", "liked", "timestamp"]
     return [dict(zip(cols, row)) for row in rows]
 
 
