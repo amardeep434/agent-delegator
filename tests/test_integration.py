@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from delegator.registry import load_registry
 from delegator.router import resolve_route
 from delegator.resolver import resolve_logical_model, normalize_model, build_cli_command
-from delegator.metrics import record_delegation, get_success_rate, get_recent_delegations
+from delegator.metrics import record_delegation, get_success_rate, get_recent_delegations, clear_delegations
 from delegator.optimizer import optimize_rankings, get_rankings
 
 
@@ -29,11 +29,12 @@ def test_full_exec_to_metrics_to_optimize_cycle():
     assert resolved == "claude-sonnet-4-6"
 
     # 5. Build CLI command
-    cmd = build_cli_command(registry, "opencode", "minimax-m2.5-free", "Test task", "/tmp/test")
-    assert "minimax-m2.5-free" in cmd
+    cmd = build_cli_command(registry, "opencode", "opencode/minimax-m2.5-free", "Test task", "/tmp/test")
+    assert "opencode/minimax-m2.5-free" in cmd
     assert "Test task" in cmd
 
-    # 6. Record synthetic delegations
+    # 6. Clear old data, then record synthetic delegations
+    clear_delegations()
     for i in range(5):
         record_delegation(
             request_id=f"test_{i}",

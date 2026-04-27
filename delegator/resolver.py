@@ -17,8 +17,12 @@ def normalize_model(model: str, agent: str, registry: dict) -> str:
 
     shorthand_map = {
         "sonnet": {"claude": "claude-sonnet-4-6", "opencode": "anthropic/claude-sonnet-4-6"},
-        "haiku": {"claude": "claude-haiku-4-5"},
+        "haiku": {"claude": "claude-haiku-4-5", "opencode": "anthropic/claude-haiku-4-5"},
         "sonnet-4-6": {"claude": "claude-sonnet-4-6", "opencode": "anthropic/claude-sonnet-4-6"},
+        "haiku-4-5": {"claude": "claude-haiku-4-5", "opencode": "anthropic/claude-haiku-4-5"},
+        "claude-sonnet-4-6": {"opencode": "anthropic/claude-sonnet-4-6"},
+        "claude-haiku-4-5": {"opencode": "anthropic/claude-haiku-4-5"},
+        "minimax": {"opencode": "opencode/minimax-m2.5-free"},
     }
 
     lower = model.lower()

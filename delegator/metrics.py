@@ -81,3 +81,14 @@ def get_recent_delegations(limit: int = 20) -> list[dict]:
     conn.close()
     cols = ["id", "from_agent", "to_agent", "model", "provider_used", "workflow", "task_type", "success", "fallback_count", "duration_ms", "timestamp"]
     return [dict(zip(cols, row)) for row in rows]
+
+
+def clear_delegations(prefix: str = "") -> None:
+    """Delete delegations for testing. If prefix given, deletes only matching ids."""
+    conn = _get_db()
+    if prefix:
+        conn.execute("DELETE FROM delegations WHERE id LIKE ?", (f"{prefix}%",))
+    else:
+        conn.execute("DELETE FROM delegations")
+    conn.commit()
+    conn.close()
