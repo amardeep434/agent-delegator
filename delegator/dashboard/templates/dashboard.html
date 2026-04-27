@@ -700,8 +700,28 @@ async function loadLogs(){
 }
 
 async function loadAnalytics(){
-  const d=await api('/api/metrics?days=7&limit=100');if(!d)return;
-  // Update the analytics whenever refreshed
+  const d=await api('/api/metrics?days=7&limit=200');if(!d)return;
+  const dels=d.delegations||[];
+  // Agent delegations count
+  const byAgent={};dels.forEach(r=>{const a=r.to_agent||'unknown';byAgent[a]=(byAgent[a]||0)+1});
+  const vals=Object.entries(byAgent).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(1,...Object.values(byAgent));
+  // Update delegations by agent chart
+  const anContainer=document.querySelector('#tab-analytics .grid .glass:nth-child(2) .space-y-2');
+  if(anContainer)anContainer.innerHTML=vals.map(([a,c],i)=>{const fills=['fill-g','fill-b','fill-y','fill-p','fill-r'];return`<div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">${a}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill ${fills[i%5]}" style="width:${Math.round(c/max*100)}%"></div></div></div>`}).join('');
+  // Update cost breakdown
+  const costContainer=document.querySelector('#tab-analytics .grid .glass:nth-child(3) .space-y-2');
+  if(costContainer){const costs={};dels.forEach(r=>{const a=r.to_agent||'unknown';costs[a]=(costs[a]||0)+(r.duration_ms||0)*0.000001});costContainer.innerHTML=Object.entries(costs).map(([a,c])=>`<div class="flex justify-between"><span class="font-mono text-xs">${a}</span><span class="font-mono text-xs text-cyan">$${c.toFixed(2)}</span></div>`).join('')+`<div class="border-t border-border pt-2 mt-2 flex justify-between font-bold"><span class="font-mono text-xs">Total 7d</span><span class="font-mono text-xs text-cyan">$${(Object.values(costs).reduce((a,b)=>a+b,0)).toFixed(2)}</span></div>`}
+  // Update failure types
+  const failContainer=document.querySelector('#tab-analytics .grid.grid-cols-2 .glass:first-child .space-y-2');
+  if(failContainer){const fails=dels.filter(r=>!r.success);const types={rate_limit:fails.filter(r=>r.fallback_count>0).length,other:fails.filter(r=>r.fallback_count===0).length};const tmax=Math.max(1,...Object.values(types));failContainer.innerHTML=[
+    ['Rate Limit / Fallback','warn',types.rate_limit,'fill-y'],
+    ['Other Failures','danger',types.other,'fill-r'],
+    ['Total','warn',fails.length,'fill-y']
+  ].map(([lbl,cls,val,fill])=>`<div><div class="flex justify-between text-2xs mb-1"><span>${lbl}</span><span class="text-${cls}">${val}</span></div><div class="progress"><div class="fill ${fill}" style="width:${Math.round(val/tmax*100)}%"></div></div></div>`).join('')}
+  // Update learned rankings
+  const rankingsContainer=document.querySelector('#tab-analytics .grid.grid-cols-2 .glass:last-child .space-y-2');
+  if(rankingsContainer){const scores={};dels.forEach(r=>{const a=r.to_agent||'unknown';scores[a]=scores[a]||{total:0,ok:0};scores[a].total++;if(r.success)scores[a].ok++});const stars=['★','★★','★★★'];rankingsContainer.innerHTML=Object.entries(scores).sort((a,b)=>(b[1].ok/b[1].total)-(a[1].ok/a[1].total)).map(([a,s],i)=>{const sc=s.ok/s.total;const cls=sc>0.8?'text-accent':sc>0.5?'text-warn':'text-danger';return`<div class="flex justify-between text-xs font-mono"><span class="${cls}">${stars[Math.min(i,2)]} ${a}</span><span>score ${sc.toFixed(2)}</span><span class="text-muted">${s.total} dels</span></div>`}).join('')}
 }
 
 // === Exec & Stop ===
@@ -714,13 +734,38 @@ async function execTask(){
 }
 async function stopTask(taskId){await api('/api/tasks/'+(taskId||liveTaskId||'')+'/stop',{method:'POST'});refreshAll()}
 
+// === QUEUE FUNCTIONS ===
+async function loadQueue(){
+  const d=await api('/api/config');if(!d)return;
+  const sCol=document.querySelector('#tab-queue .grid.grid-cols-2 .glass:first-child .space-y-2,.glass:first-child .space-y-2');
+  if(sCol){sCol.innerHTML=(d.scheduled||[]).map(s=>`<div class="flex items-center justify-between p-2 rounded" style="background:rgba(139,92,246,.04)"><div><div class="font-mono text-xs">${s.task||''}</div><div class="text-2xs text-muted">${s.model||''} · ${s.workflow||''}</div></div><div class="text-right"><span class="font-mono text-xs text-purple">${s.cron||'manual'}</span><div class="flex gap-1 mt-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Run</button></div></div></div>`).join('')+`<button class="btn btn-info text-xs w-full mt-2" style="padding:6px" onclick="addScheduled()">+ Add Scheduled</button>`}
+  const pCol=document.querySelector('#tab-queue .grid.grid-cols-2 .glass:last-child .space-y-2,.glass:last-child .space-y-2');
+  if(pCol){pCol.innerHTML=(d.pending_queue||[]).map(q=>`<div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">${q.task||''}</div><div class="text-2xs text-muted">${q.model||''} · ${q.workflow||''}</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>`).join('')+`<button class="btn btn-info text-xs w-full mt-2" style="padding:6px" onclick="addPending()">+ Enqueue Task</button>`}
+}
+async function addScheduled(){const t=prompt('Task description:');if(!t)return;const m=prompt('Model (default: federated-coding):')||'federated-coding';const cr=prompt('Cron (e.g. 0 2 * * *):')||'';await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:cr})});loadQueue()}
+async function addPending(){const t=prompt('Task description:');if(!t)return;await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});loadQueue()}
+
+// === COMPARE FUNCTION ===
+async function runCompare(){
+  const inp=document.querySelector('#tab-compare input');const task=inp?inp.value:'';if(!task)return;
+  const cols=document.querySelectorAll('#tab-compare .compare-col');
+  cols.forEach(c=>{c.classList.add('running');const ty=c.querySelector('.typing');if(ty)ty.textContent='starting...'});
+  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:'opencode-go/deepseek-v4-pro',model_b:'claude-sonnet-4-6'})});
+  if(!d)return;
+  ['A','B'].forEach((lbl,i)=>{const r=d.results[lbl];if(r&&cols[i]){const b=cols[i].querySelector('.t-body');if(b)b.innerHTML=`<div class="log g">Provider: ${r.provider||'—'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log ${r.success?'g':'y'}">${r.success?'✅ '+r.provider+' OK':'❌ Failed'}</div>`;cols[i].classList.replace('running','done');const ty=cols[i].querySelector('.typing');if(ty)ty.textContent=r.success?'completed':'failed'}})
+}
+
+// === LIVE VIEW POLL ===
+async function loadLiveView(){const tid=liveTaskId;if(!tid)return;const d=await api('/api/tasks/'+tid+'/output');if(d&&d.status==='running')setTimeout(loadLiveView,3000)}
+
 // === Override switchTab to load data ===
-const _st=switchTab;switchTab=function(t){_st(t);if(t==='routes')loadRoutes();if(t==='logs')loadLogs();if(t==='history')loadHistory();if(t==='analytics')loadAnalytics()}
+const _st=switchTab;switchTab=function(t){_st(t);if(t==='routes')loadRoutes();if(t==='logs')loadLogs();if(t==='history')loadHistory();if(t==='analytics')loadAnalytics();if(t==='queue')loadQueue()}
 
 // === Button click delegation ===
 document.addEventListener('click',e=>{
   if(e.target.classList.contains('btn-danger')&&e.target.textContent.includes('Stop')){e.preventDefault();stopTask()}
   if(e.target.classList.contains('btn-pri')&&e.target.textContent.includes('Execute')){e.preventDefault();execTask()}
+  if(e.target.classList.contains('btn-pri')&&e.target.textContent.includes('Run A/B')){e.preventDefault();runCompare()}
 });
 
 // === Notification save handlers ===  
