@@ -25,11 +25,13 @@
     "copilot": {
       "name": "GitHub Copilot CLI",
       "available_models": [
-        {"id": "claude-sonnet-4-6", "display": "Sonnet 4.6", "capabilities": ["coding", "reasoning"]},
+        {"id": "gpt-5.4", "display": "GPT 5.4", "capabilities": ["coding", "reasoning"]},
+        {"id": "gpt-5.2", "display": "GPT 5.2", "capabilities": ["coding"]},
+        {"id": "gpt-5.4-mini", "display": "GPT 5.4 Mini", "capabilities": ["coding", "fast", "free"]},
         {"id": "gpt-4.1", "display": "GPT 4.1", "capabilities": ["coding"]},
-        {"id": "gpt-4o-mini", "display": "GPT 4o Mini", "capabilities": ["coding", "fast", "free"]}
+        {"id": "gpt-5-mini", "display": "GPT-5 Mini", "capabilities": ["coding", "fast", "free"]}
       ],
-      "cli_template": "echo \"{task}\" | gh copilot --model {model}"
+      "cli_template": "echo \"{task}\" | copilot -p \"{task}\" --model {model}"
     },
     "codex": {
       "name": "Codex CLI",
@@ -46,13 +48,13 @@
         {"id": "gemini-3.1-pro-high", "display": "Gemini 3.1 Pro", "capabilities": ["coding", "reasoning"]},
         {"id": "gemini-3.1-flash", "display": "Gemini 3.1 Flash", "capabilities": ["coding", "fast", "free"]}
       ],
-      "cli_template": "echo \"{task}\" | gemini -p -m {model} --approval-mode auto_edit --yolo"
+      "cli_template": "echo \"{task}\" | gemini -p \"{task}\" -m {model} --approval-mode auto_edit"
     }
   },
   "logical_models": {
     "federated-sonnet": {
       "display": "Any Sonnet",
-      "providers": ["claude:claude-sonnet-4-6", "copilot:claude-sonnet-4-6"]
+      "providers": ["claude:claude-sonnet-4-6"]
     },
     "federated-coding": {
       "display": "Any Coding Model",
@@ -125,7 +127,9 @@
   "rate_limit_patterns": [
     "429", "rate.?limit", "too.?many.?requests", "rate_limit_exceeded",
     "quota.?exceeded", "max.?tokens", "tpm.?limit", "rpm.?limit",
-    "hit.*limit", "limit.*reset", "overloaded", "insufficient_quota"
+    "hit.*limit", "limit.*reset", "overloaded", "insufficient_quota",
+    "model.*not.*available", "not.*available",
+    "no quota", "You have no quota"
   ],
   "cooldown": {
     "failure_threshold": 3,
