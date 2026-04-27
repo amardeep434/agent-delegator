@@ -40,3 +40,8 @@ def worktrees_dir(project_root: str | None = None) -> Path:
         path = Path.cwd() / ".delegation" / "worktrees"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def likes_path() -> Path:
+    """Path to the delegation likes JSON file."""
+    return state_dir() / "likes.json"
