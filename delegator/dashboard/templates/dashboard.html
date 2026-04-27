@@ -838,6 +838,27 @@ function toggleAutoScroll(cb){localStorage.setItem('delegator-autoscroll',cb.che
 // Load projects on start
 loadProjects();
 
+// === DRAG-TO-REORDER for Provider Priority ===
+function initDragSort() {
+  const container = document.querySelector('#set-routing .space-y-1');
+  if (!container) return;
+  container.querySelectorAll('.cursor-grab').forEach(item => {
+    item.setAttribute('draggable', 'true');
+    item.addEventListener('dragstart', e => { e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+    item.addEventListener('dragend', e => { e.target.style.opacity = '1'; });
+    item.addEventListener('dragover', e => { e.preventDefault(); e.target.closest('.cursor-grab').style.borderTop = '2px solid #22C55E'; });
+    item.addEventListener('dragleave', e => { e.target.closest('.cursor-grab').style.borderTop = ''; });
+    item.addEventListener('drop', e => { e.preventDefault(); const d=container.querySelector('.cursor-grab[style*=\"0.4\"]'); const o=e.target.closest('.cursor-grab'); if(d&&o&&d!==o){const r=o.getBoundingClientRect();container.insertBefore(d,e.clientY<r.top+r.height/2?o:o.nextSibling)} container.querySelectorAll('.cursor-grab').forEach(i=>i.style.borderTop=''); updatePriorityNumbers(); });
+  });
+}
+function updatePriorityNumbers(){document.querySelectorAll('#set-routing .cursor-grab .font-mono.text-sm').forEach((el,i)=>{el.textContent=`${i+1}. ${el.textContent.replace(/^\d+\.\s*/,'')}`})}
+document.addEventListener('DOMContentLoaded', initDragSort);
+
+// === SETTINGS PERSISTENCE (real API calls) ===
+async function saveRouting(){const pri=[];document.querySelectorAll('#set-routing .cursor-grab').forEach(el=>{const n=el.querySelector('.font-mono.text-sm');if(n)pri.push(n.textContent.replace(/^\d+\.\s*/,''))});const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});alert(r?'Priority saved!':'Save failed')}
+async function saveCircuitBreaker(){const inp=document.querySelectorAll('#set-control input[type=number]');const cfg={failure_threshold:parseInt(inp[0]?.value)||3,base_minutes:parseInt(inp[1]?.value)||5,max_minutes:parseInt(inp[2]?.value)||60,worktree_ttl:parseInt(inp[3]?.value)||24};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:cfg})});alert(r?'Saved!':'Failed')}
+async function savePreferences(){const s=document.querySelectorAll('#set-general select');const p={default_model:s[0]?.value,default_workflow:s[1]?.value,auto_refresh:s[2]?.value};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'preferences',prefs:p})});alert(r?'Preferences saved!':'Save failed')}
+
 refreshAll();setInterval(refreshAll,5000);
 </script>
 
