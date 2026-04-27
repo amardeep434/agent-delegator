@@ -52,6 +52,23 @@ def _create_worktree(project_root: str, task_id: str) -> Path:
     return worktree_path
 
 
+def _try_handoff(delegate_agent, logical_providers, i, task, model, worktree):
+    next_idx = i + 1
+    if next_idx < len(logical_providers):
+        next_provider = logical_providers[next_idx].split(":", 1)
+        if len(next_provider) == 2:
+            try:
+                write_handoff(
+                    from_agent=delegate_agent,
+                    to_agent=next_provider[0],
+                    task=task,
+                    prev_model=model,
+                    worktree=worktree,
+                )
+            except Exception:
+                pass
+
+
 def execute(request: DelegationRequest, project_root: str | None = None) -> DelegationResult:
     """Execute a delegation request with federated failover.
 
@@ -110,50 +127,20 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = "timeout"
-            next_idx = i + 1
-            if next_idx < len(logical_providers):
-                next_provider = logical_providers[next_idx].split(":", 1)
-                if len(next_provider) == 2:
-                    write_handoff(
-                        from_agent=delegate_agent,
-                        to_agent=next_provider[0],
-                        task=request.task,
-                        prev_model=model,
-                        worktree=worktree,
-                    )
+            _try_handoff(delegate_agent, logical_providers, i, request.task, model, worktree)
             continue
         except Exception as e:
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = str(e)[:200]
-            next_idx = i + 1
-            if next_idx < len(logical_providers):
-                next_provider = logical_providers[next_idx].split(":", 1)
-                if len(next_provider) == 2:
-                    write_handoff(
-                        from_agent=delegate_agent,
-                        to_agent=next_provider[0],
-                        task=request.task,
-                        prev_model=model,
-                        worktree=worktree,
-                    )
+            _try_handoff(delegate_agent, logical_providers, i, request.task, model, worktree)
             continue
 
         if _check_failure(log_path, registry):
             record_failure(agent, model, registry)
             fallback_count += 1
             last_error = "rate_limit_or_failure"
-            next_idx = i + 1
-            if next_idx < len(logical_providers):
-                next_provider = logical_providers[next_idx].split(":", 1)
-                if len(next_provider) == 2:
-                    write_handoff(
-                        from_agent=delegate_agent,
-                        to_agent=next_provider[0],
-                        task=request.task,
-                        prev_model=model,
-                        worktree=worktree,
-                    )
+            _try_handoff(delegate_agent, logical_providers, i, request.task, model, worktree)
             continue
 
         record_success(agent, model)
