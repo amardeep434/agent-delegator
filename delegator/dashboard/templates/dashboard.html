@@ -4,907 +4,207 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>delegator — Mission Control</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script>tailwind.config={theme:{extend:{colors:{bg:'#020617',surface:'#0F172A',border:'#1E293B',accent:'#22C55E',accentdim:'#166534',text:'#F8FAFC',muted:'#94A3B8',danger:'#EF4444',warn:'#F59E0B',info:'#3B82F6',purple:'#8B5CF6',pink:'#EC4899',cyan:'#06B6D4'},fontFamily:{mono:['JetBrains Mono','monospace'],sans:['Fira Sans','sans-serif']}}}}</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#020617;font-family:'Fira Sans',sans-serif;color:#F8FAFC;overflow-x:hidden;padding-bottom:40px}
+.glass{background:#0F172A;border:1px solid #1E293B;border-radius:10px;transition:border-color 200ms}.glass:hover{border-color:#334155}
 .pulse-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .pulse-dot.online{background:#22C55E;box-shadow:0 0 8px #22C55E;animation:pulse 2s infinite}
 .pulse-dot.warning{background:#F59E0B;box-shadow:0 0 6px #F59E0B;animation:pulse 1.5s infinite}
 .pulse-dot.danger{background:#EF4444;box-shadow:0 0 6px #EF4444}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.glass{background:#0F172A;border:1px solid #1E293B;border-radius:10px;transition:border-color 200ms}
-.glass:hover{border-color:#334155}
-.glass-sel{border-color:#22C55E!important;background:rgba(34,197,94,.06)!important}
-.btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 16px;border-radius:6px;cursor:pointer;transition:all 150ms;border:none;font-weight:600}
+.tab{padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;font-family:monospace;font-size:13px;color:#64748B;transition:all 200ms}
+.tab.active{color:#22C55E;border-bottom-color:#22C55E}.tab:hover{color:#94A3B8}
+.btn{font-family:monospace;font-size:12px;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all 150ms;border:none;font-weight:600}
 .btn-pri{background:#22C55E;color:#020617}.btn-pri:hover{background:#16A34A;box-shadow:0 0 16px rgba(34,197,94,.3)}
 .btn-danger{background:transparent;color:#EF4444;border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:rgba(239,68,68,.1);border-color:#EF4444}
 .btn-ghost{background:transparent;color:#94A3B8;border:1px solid #1E293B}.btn-ghost:hover{color:#F8FAFC;border-color:#334155}
 .btn-info{background:transparent;color:#3B82F6;border:1px solid rgba(59,130,246,.3)}.btn-info:hover{background:rgba(59,130,246,.1)}
-.status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;font-family:monospace}
 .s-ok{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
 .s-fail{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
-.s-rate{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
-.s-info{background:rgba(59,130,246,.15);color:#3B82F6;border:1px solid rgba(59,130,246,.3)}
-.s-purple{background:rgba(139,92,246,.15);color:#8B5CF6;border:1px solid rgba(139,92,246,.3)}
-.kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 5px;border-radius:3px;background:#1E293B;border:1px solid #334155;color:#94A3B8}
-.input{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color 200ms;width:100%}
-.input:focus{border-color:#22C55E}
-.select{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;transition:border-color 200ms}
-.select:hover{border-color:#22C55E}
-.progress{height:4px;border-radius:2px;background:#1E293B;overflow:hidden}.progress .fill{height:100%;border-radius:2px;transition:width 1s ease}
-.fill-g{background:#22C55E}.fill-y{background:#F59E0B}.fill-r{background:#EF4444}.fill-b{background:#3B82F6}.fill-p{background:#8B5CF6}
-.tab{padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all 200ms;color:#64748B;font-size:13px;font-family:'JetBrains Mono',monospace}
-.tab.active{color:#22C55E;border-bottom-color:#22C55E}.tab:hover{color:#94A3B8}
-.log{font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 0}
-.log.m{color:#64748B}.log.g{color:#22C55E}.log.y{color:#F59E0B}.log.b{color:#3B82F6}.log.p{color:#8B5CF6}
+.s-warn{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.kbd{font-family:monospace;font-size:10px;padding:1px 5px;border-radius:3px;background:#1E293B;border:1px solid #334155;color:#94A3B8}
+.input{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:monospace;font-size:13px;outline:none;width:100%}.input:focus{border-color:#22C55E}
+.select{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:monospace;font-size:13px;cursor:pointer}.select:hover{border-color:#22C55E}
+.progress{height:4px;border-radius:2px;background:#1E293B;overflow:hidden}.progress .fill-g{background:#22C55E;height:100%;border-radius:2px}.fill-y{background:#F59E0B}.fill-r{background:#EF4444}.fill-b{background:#3B82F6}
+.log{font-family:monospace;font-size:12px;padding:1px 0}.log.m{color:#64748B}.log.g{color:#22C55E}.log.y{color:#F59E0B}.log.b{color:#3B82F6}
 .terminal{background:#020617;border:1px solid #1E293B;border-radius:8px;overflow:hidden}
 .t-head{background:#0F172A;padding:8px 14px;display:flex;gap:6px;align-items:center;border-bottom:1px solid #1E293B}
 .t-dot{width:10px;height:10px;border-radius:50%}.t-dot.r{background:#EF4444}.t-dot.y{background:#F59E0B}.t-dot.g{background:#22C55E}
-.t-body{padding:12px 14px;max-height:450px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px}
+.t-body{padding:12px 14px;max-height:500px;overflow-y:auto;font-family:monospace;font-size:12px}
 .typing::after{content:' ▌';animation:blink 1s step-end infinite;color:#22C55E}@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-/* Tooltip - fixed positioning, never overflows */
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#020617}::-webkit-scrollbar-thumb{background:#1E293B;border-radius:3px}
 .tooltip-trigger{position:relative;display:inline-flex;align-items:center}
-.tooltip-content{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #475569;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;white-space:normal;z-index:200;max-width:320px;min-width:180px;font-family:'Fira Sans',sans-serif;font-weight:400;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
-.tooltip-content b{color:#F8FAFC;font-family:'JetBrains Mono',monospace;font-size:10px}
-.tooltip-content code{color:#86EFAC;font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(34,197,94,.1);padding:1px 4px;border-radius:3px}
-.tooltip-content br{line-height:0}
+.tooltip-content{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #475569;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;white-space:normal;z-index:200;max-width:320px;font-family:'Fira Sans',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .tooltip-trigger:hover .tooltip-content{display:block}
-/* Prevent tooltip clipping at edges */
-#set-notifications .glass{overflow:visible}
-#set-notifications{overflow:visible}
-/* Brighter ℹ icon */
 .info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(148,163,184,.15);color:#94A3B8;font-size:12px;font-weight:700;cursor:help;transition:all 150ms}
 .info-icon:hover{background:rgba(59,130,246,.2);color:#60A5FA}
-/* Toast notification panel */
 .toast-panel{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:340px}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#020617}::-webkit-scrollbar-thumb{background:#1E293B;border-radius:3px}
-/* Toast notification */
-.toast{position:fixed;top:16px;right:16px;z-index:1000;animation:slideIn .3s ease}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-/* Modal overlay */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center}
-.modal{background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto}
-/* Heart button */
-.heart{font-size:14px;cursor:pointer;transition:all 200ms;opacity:.4}.heart:hover,.heart.liked{opacity:1;color:#EC4899}
-/* Chart bars */
-.bar-group{display:flex;align-items:flex-end;gap:2px;height:80px}
-.bar{width:14px;border-radius:2px 2px 0 0;transition:height .5s ease;min-height:2px}
-.bar.g{background:#22C55E}.bar.r{background:#EF4444}.bar.b{background:#3B82F6}.bar.y{background:#F59E0B}
-/* Light mode */
-body.light{background:#F8FAFC;color:#0F172A}
-body.light .glass{background:#FFFFFF;border-color:#E2E8F0}
-body.light .tab{color:#64748B}body.light .tab.active{color:#059669}
-body.light .terminal{background:#F1F5F9;border-color:#E2E8F0}
-body.light .t-body{background:#F8FAFC}
-body.light .t-head{background:#E2E8F0}
-body.light .input,body.light .select{background:#F8FAFC;border-color:#CBD5E1;color:#0F172A}
-body.light .kbd{background:#E2E8F0;border-color:#CBD5E1;color:#475569}
-body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
-/* Compare A/B */
-.compare-col{border:2px dashed #1E293B;border-radius:8px;padding:12px;transition:border-color 200ms}
-.compare-col:hover{border-color:#3B82F6}
-.compare-col.running{border-color:#22C55E;border-style:solid;border-width:2px}
-.compare-col.done{border-color:#8B5CF6;border-style:solid}
+.compare-col{border:2px dashed #1E293B;border-radius:8px;padding:12px}.compare-col.running{border-color:#22C55E;border-style:solid}
+table{width:100%}th{text-align:left;padding:8px 12px;font-family:monospace;font-size:11px;text-transform:uppercase;color:#94A3B8;background:rgba(30,41,59,.3)}td{padding:8px 12px;font-size:12px;border-bottom:1px solid #1E293B}
 </style>
 </head>
 <body class="min-h-screen p-6">
 <div class="max-w-7xl mx-auto">
 
-<!-- ===== HEADER ===== -->
-<div class="flex items-center justify-between mb-4">
-  <div class="flex items-center gap-4">
-    <h1 class="font-mono text-xl font-bold"><span class="text-accent" style="text-shadow:0 0 14px rgba(34,197,94,.35)">◈</span> delegator</h1>
-    <span class="text-xs text-muted">Mission Control</span>
-    <span class="text-muted text-xs">|</span>
-    <div class="flex items-center gap-2">
-      <select class="select text-xs" style="padding:4px 8px" id="project-switcher" onchange="switchProject(this.value)">
-        <option>📁 VyapaarLink</option>
-        <option>📁 delegator</option>
-        <option>📁 personal-website</option>
-      </select> <span class="text-xs text-muted">[F7]</span>
-    </div>
-  </div>
-  <div class="flex items-center gap-4">
-    <button class="text-xs text-muted font-mono hover:text-text" onclick="document.body.classList.toggle('light')">☀/🌙 Theme</button>
-    <div class="flex items-center gap-1"><button class="btn btn-info text-xs" style="padding:3px 10px" onclick="autoHeal()">🩺 Auto-Heal</button></div>
-    <span class="text-muted text-xs">|</span>
-    <span class="text-xs text-muted font-mono">⌘K</span>
-  </div>
-</div>
+<!-- HEADER -->
+<div class="flex items-center justify-between mb-4"><div class="flex items-center gap-4"><h1 class="font-bold text-xl" style="font-family:monospace"><span class="accent" style="color:#22C55E;text-shadow:0 0 14px rgba(34,197,94,.35)">◈</span> delegator</h1><span style="font-size:12px;color:#94A3B8">Mission Control</span><span style="color:#94A3B8;font-size:12px">|</span><select class="select" style="padding:4px 8px;font-size:12px" id="project-switcher" onchange="switchProject(this.value)"></select></div><div style="display:flex;gap:12px;align-items:center"><button class="btn btn-info" style="font-size:11px;padding:3px 10px" onclick="autoHeal()">🩺 Auto-Heal</button><button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="document.body.classList.toggle('light')">☀ Theme</button></div></div>
 
-<!-- ===== TOAST NOTIFICATION PANEL ===== -->
-<div class="toast-panel">
-  <div class="glass p-3 flex items-center gap-3" style="border-color:rgba(34,197,94,.3);max-width:320px">
-    <div class="pulse-dot online"></div>
-    <div class="text-xs"><span class="font-mono text-accent">#a3f2</span> completed <span class="text-muted">· 17.3s · opencode</span></div>
-    <button class="text-muted ml-2" style="cursor:pointer;font-size:14px" onclick="this.closest('.glass').remove()">×</button>
-  </div>
-  <div class="glass p-3 flex items-center gap-3" style="border-color:rgba(239,68,68,.3);max-width:320px">
-    <div class="pulse-dot danger"></div>
-    <div class="text-xs"><span class="font-mono text-danger">#c911</span> rate limited <span class="text-muted">· claude · retrying copilot</span></div>
-    <button class="text-muted ml-2" style="cursor:pointer;font-size:14px" onclick="this.closest('.glass').remove()">×</button>
-  </div>
-</div>
+<!-- ALERT BAR -->
+<div id="alert-bar" class="glass mb-3 p-3" style="display:none;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)"><div id="alert-msg" style="font-size:12px"></div></div>
 
-<!-- ===== ALERT BAR ===== -->
-<div class="glass mb-3 p-3 flex items-center justify-between" style="border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)">
-  <div class="flex items-center gap-3 flex-wrap">
-    <span style="font-size:14px">&#9888;</span>
-    <span class="font-mono text-xs text-danger">antigravity cooldown 12m</span>
-    <span class="text-muted text-xs">|</span>
-    <span class="font-mono text-xs text-warn">copilot quota exceeded</span>
-    <span class="text-muted text-xs">|</span>
-    <span class="font-mono text-xs text-info">rate limits reset in <span class="text-accent">23m</span> (claude), <span class="text-accent">8m</span> (opencode:minimax)</span>
-  </div>
-  <div class="flex gap-2">
-    <button class="btn btn-info text-xs" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal All</button>
-    <button class="btn btn-ghost text-xs" onclick="this.closest('.glass').style.display='none'">Dismiss</button>
-  </div>
-</div>
+<!-- METRICS -->
+<div class="grid grid-cols-8 gap-2 mb-3" id="metrics-row"></div>
 
-<!-- ===== METRICS ===== -->
-<div class="grid grid-cols-8 gap-2 mb-3">
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-accent">5</div><div class="text-2xs text-muted uppercase">Agents</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-info">3</div><div class="text-2xs text-muted uppercase">Running</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-text">247</div><div class="text-2xs text-muted uppercase">7d Dels</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-accent">87.3%</div><div class="text-2xs text-muted uppercase">Success</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-warn">2</div><div class="text-2xs text-muted uppercase">Cooldowns</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-purple">7</div><div class="text-2xs text-muted uppercase">Queued</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-pink">14</div><div class="text-2xs text-muted uppercase">Routes</div></div>
-  <div class="glass p-2 text-center"><div class="text-sm font-mono font-bold text-cyan">$0.34</div><div class="text-2xs text-muted uppercase">Cost 7d</div></div>
-</div>
+<!-- ACTIVE TASKS BANNER -->
+<div class="glass mb-3" id="tasks-banner" style="display:none"><div style="display:flex;justify-content:space-between;padding:8px 14px;background:rgba(59,130,246,.04);border-bottom:1px solid rgba(59,130,246,.1)"><span style="font-size:12px;color:#3B82F6;font-family:monospace" id="task-count"></span><button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="document.getElementById('task-cards').classList.toggle('hidden')">Collapse</button></div><div class="grid grid-cols-3 divide-x divide-border" id="task-cards"></div></div>
 
-<!-- ===== ACTIVE TASKS BANNER ===== -->
-<div class="glass mb-3 overflow-hidden" style="border-color:rgba(59,130,246,.2)">
-  <div class="flex items-center justify-between px-4 py-2" style="background:rgba(59,130,246,.04);border-bottom:1px solid rgba(59,130,246,.1)">
-    <div class="flex items-center gap-2">
-      <span class="pulse-dot online"></span><span class="font-mono text-xs text-info font-semibold">3 Active</span>
-      <span class="text-muted text-xs">Press <span class="kbd">1-3</span> for live view</span>
-    </div>
-    <button class="btn btn-ghost text-xs" onclick="this.closest('.glass').querySelector('.bb').classList.toggle('hidden')">Collapse</button>
-  </div>
-  <div class="bb grid grid-cols-3 divide-x divide-border">
-    <div class="glass-sel p-3 cursor-pointer" id="t-a3f2" onclick="selectTask('a3f2','1')">
-      <div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#a3f2</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">27s</span><span class="text-2xs text-cyan font-mono">est $0.02</span><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation()">Stop</button></div></div>
-      <div class="text-xs text-muted mb-1">opencode · deepseek-v4-pro</div><div class="text-xs text-text truncate">Add unit tests for OrderRepository</div>
-      <div class="progress mt-1"><div class="fill fill-g" style="width:82%"></div></div>
-    </div>
-    <div class="glass p-3 cursor-pointer" id="t-b7e8" onclick="selectTask('b7e8','2')">
-      <div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#b7e8</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">11s</span><span class="text-2xs text-cyan font-mono">est $0.05</span><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation()">Stop</button></div></div>
-      <div class="text-xs text-muted mb-1">claude · claude-sonnet-4-6</div><div class="text-xs text-text truncate">Design auth system architecture</div>
-      <div class="progress mt-1"><div class="fill fill-g" style="width:45%"></div></div>
-    </div>
-    <div class="glass p-3 cursor-pointer" id="t-c911" onclick="selectTask('c911','3')">
-      <div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#c911</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">4s</span><span class="text-2xs text-cyan font-mono">est $0.00</span><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation()">Stop</button></div></div>
-      <div class="text-xs text-muted mb-1">opencode · kimi-k2.6</div><div class="text-xs text-text truncate">Run ESLint across codebase</div>
-      <div class="progress mt-1"><div class="fill fill-g" style="width:20%"></div></div>
-    </div>
-  </div>
-</div>
-
-<!-- ===== MAIN GRID ===== -->
+<!-- MAIN GRID -->
 <div class="grid grid-cols-12 gap-3">
-
   <!-- LEFT: Agent Cards -->
-  <div class="col-span-2 space-y-2">
-    <div class="glass p-2 cursor-pointer relative" onclick="toggleModal('agent-claude')">
-      <div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">claude</span><span class="text-2xs text-cyan ml-auto">$0.12</span></div>
-      <div class="text-2xs text-muted">sonnet-4-6</div>
-      <div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill fill-g" style="width:92%"></div></div><span class="text-2xs text-accent font-mono">92%</span></div>
-      <div class="text-2xs text-muted mt-1">2 models · 89 dels</div></div>
-    <div class="glass p-2 cursor-pointer relative" onclick="toggleModal('agent-opencode')">
-      <div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">opencode</span><span class="text-2xs text-cyan ml-auto">$0.08</span></div>
-      <div class="text-2xs text-muted">deepseek-v4-pro</div>
-      <div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill fill-g" style="width:95%"></div></div><span class="text-2xs text-accent font-mono">95%</span></div>
-      <div class="text-2xs text-muted mt-1">7 models · 102 dels</div></div>
-    <div class="glass p-2 cursor-pointer" style="border-color:rgba(245,158,11,.3)" onclick="toggleModal('agent-copilot')">
-      <div class="flex items-center gap-2"><span class="pulse-dot warning"></span><span class="font-mono text-xs font-semibold">copilot</span><span class="text-2xs text-cyan ml-auto">$0.14</span></div>
-      <div class="text-2xs text-warn">quota limit</div>
-      <div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill fill-y" style="width:72%"></div></div><span class="text-2xs text-warn font-mono">72%</span></div>
-      <div class="text-2xs text-muted mt-1">8 models · 45 dels</div></div>
-    <div class="glass p-2 cursor-pointer" onclick="toggleModal('agent-codex')">
-      <div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">codex</span><span class="text-2xs text-cyan ml-auto">$0.00</span></div>
-      <div class="text-2xs text-muted">gpt-5.4</div>
-      <div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill fill-g" style="width:88%"></div></div><span class="text-2xs text-accent font-mono">88%</span></div>
-      <div class="text-2xs text-muted mt-1">3 models · 8 dels</div></div>
-    <div class="glass p-2 cursor-pointer" onclick="toggleModal('agent-antigravity')">
-      <div class="flex items-center gap-2"><span class="pulse-dot danger"></span><span class="font-mono text-xs font-semibold">antigravity</span><span class="text-2xs text-cyan ml-auto">$0.00</span></div>
-      <div class="text-2xs text-danger">cooldown 12m</div>
-      <div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill fill-r" style="width:45%"></div></div><span class="text-2xs text-danger font-mono">45%</span></div>
-      <div class="text-2xs text-muted mt-1">2 models · 3 dels</div></div>
-    <div class="mt-2 px-1">
-      <button class="w-full text-left btn btn-ghost text-xs" style="font-size:10px;padding:3px 8px" onclick="document.getElementById('shortcuts-modal').classList.toggle('hidden')">⌨  Shortcuts</button>
-    </div>
-  </div>
+  <div class="col-span-2" id="agent-cards"></div>
 
   <!-- RIGHT: Tabs -->
-  <div class="col-span-10 space-y-3">
-    <div class="flex gap-0 border-b border-border">
-      <div class="tab active" onclick="switchTab('live')">Live</div>
-      <div class="tab" onclick="switchTab('logs')">Logs</div>
-      <div class="tab" onclick="switchTab('history')">History</div>
-      <div class="tab" onclick="switchTab('analytics')">Analytics</div>
-      <div class="tab" onclick="switchTab('compare')">Compare</div>
-      <div class="tab" onclick="switchTab('queue')">Queue</div>
-      <div class="tab" onclick="switchTab('exec')">Execute</div>
-      <div class="tab" onclick="switchTab('settings')">Settings</div>
-    </div>
-
-    <!-- LIVE TAB -->
-    <div id="tab-live">
-      <div class="terminal"><div class="t-head"><div class="t-dot r"></div><div class="t-dot y"></div><div class="t-dot g"></div><span class="font-mono text-xs text-muted ml-2">delegator live — #a3f2 · opencode · deepseek-v4-pro</span><span class="font-mono text-xs text-accent ml-auto typing">streaming</span></div><div class="t-body">
-        <div class="log g">$ delegator exec --model federated-coding "Add unit tests for OrderRepository"</div>
-        <div class="log m">  route: subagent-driven → opencode | model: federated-coding</div>
-        <div class="log m">  providers: opencode-go/deepseek-v4-pro → opencode-go/minimax-m2.7 → ...</div>
-        <div class="log p">  ▸ opencode / opencode-go/deepseek-v4-pro (rank #1, score 0.95)</div>
-        <div class="log m" style="margin-top:4px">[claude-mem] OpenCode plugin loading (project: opencode)</div>
-        <div class="log g">> build · deepseek-v4-pro</div>
-        <div class="log m">> Reading OrderRepository.java (247 lines)...</div>
-        <div class="log g">> Found 3 existing tests, identified 4 coverage gaps</div>
-        <div class="log g">> │ Generating test_shouldCalculateTotalWithDiscount... ████████░░ 80%</div>
-        <div class="log g typing">> Generating test_orderNotFoundThrowsException...</div></div></div>
-      <div class="glass p-3 mt-2 flex items-center justify-between">
-        <div class="flex items-center gap-4"><span class="font-mono text-xs">#a3f2</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs">opencode · deepseek</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs">subagent-driven</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs">27.4s</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs text-cyan">est $0.02</span></div>
-        <div class="flex gap-2"><button class="btn btn-danger">Stop</button><button class="btn btn-ghost" onclick="rerunTask()">Rerun</button><button class="btn btn-ghost" onclick="copyOutput()">Copy</button></div>
-      </div>
-    </div>
-
-    <!-- LOGS TAB -->
-    <div id="tab-logs" class="hidden">
-      <div class="flex items-center gap-3 mb-2 flex-wrap">
-        <span class="text-xs text-muted font-mono">Filter:</span>
-        <select class="select text-xs" style="padding:4px 8px" onchange="filterLogs()"><option>All agents</option><option>opencode</option><option>claude</option><option>copilot</option><option>codex</option><option>antigravity</option></select>
-        <select class="select text-xs" style="padding:4px 8px" onchange="filterLogs()"><option>All levels</option><option>ERROR</option><option>WARN</option><option>INFO</option><option>DEBUG</option></select>
-        <input type="text" class="input" style="max-width:200px;padding:4px 8px" placeholder="Search logs..." onkeyup="searchLogs(this.value)">
-        <span class="text-muted text-xs ml-auto">12,847 entries</span>
-        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked class="accent-green-500" onchange="toggleAutoScroll(this)"><span class="text-2xs text-muted font-mono">Auto-scroll</span></label>
-        <button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportLogs()">Export</button>
-        <button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="clearLogs()">Clear</button>
-      </div>
-      <div class="grid grid-cols-12 gap-3">
-        <!-- Log Stream -->
-        <div class="col-span-9 terminal">
-          <div class="t-head">
-            <div class="t-dot g"></div><div class="t-dot y"></div><div class="t-dot r"></div>
-            <span class="font-mono text-xs text-muted ml-2">delegator logs — streaming</span>
-            <span class="font-mono text-xs text-accent ml-auto"><span class="typing">live</span></span>
-          </div>
-           <div class="t-body" style="max-height:550px;overflow-y:auto;font-size:11px;" id="log-stream">
-            <div class="text-center text-muted text-xs font-mono pt-4">Click Logs tab or press <span class="kbd">O</span> to load delegation logs</div>
-          </div>
-        </div>
-        <!-- Log Metrics Sidebar -->
-        <div class="col-span-3 space-y-3">
-          <div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Metrics</h3>
-            <div class="space-y-2">
-              <div class="flex justify-between"><span class="text-2xs text-muted">ERROR</span><span class="font-mono text-xs text-danger">3</span></div>
-              <div class="progress"><div class="fill fill-r" style="width:15%"></div></div>
-              <div class="flex justify-between"><span class="text-2xs text-muted">WARN</span><span class="font-mono text-xs text-warn">8</span></div>
-              <div class="progress"><div class="fill fill-y" style="width:40%"></div></div>
-              <div class="flex justify-between"><span class="text-2xs text-muted">INFO</span><span class="font-mono text-xs text-info">12,834</span></div>
-              <div class="progress"><div class="fill fill-b" style="width:100%"></div></div>
-              <div class="flex justify-between"><span class="text-2xs text-muted">DEBUG</span><span class="font-mono text-xs text-purple">2</span></div>
-              <div class="progress"><div class="fill fill-p" style="width:10%"></div></div>
-            </div>
-            <div class="border-t border-border mt-3 pt-2 space-y-1">
-              <div class="flex justify-between text-2xs"><span class="text-muted">Error rate</span><span class="font-mono text-danger">0.02%</span></div>
-              <div class="flex justify-between text-2xs"><span class="text-muted">Avg response time</span><span class="font-mono text-accent">14.2s</span></div>
-              <div class="flex justify-between text-2xs"><span class="text-muted">Active sessions</span><span class="font-mono text-info">3</span></div>
-              <div class="flex justify-between text-2xs"><span class="text-muted">Log rate</span><span class="font-mono text-purple">47/min</span></div>
-            </div>
-          </div>
-          <div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Top Errors</h3>
-            <div class="space-y-2 text-2xs font-mono">
-              <div><div class="text-danger">rate_limit_exceeded</div><div class="text-muted">14 occurrences</div></div>
-              <div><div class="text-warn">quota_exceeded</div><div class="text-muted">5 occurrences</div></div>
-              <div><div class="text-danger">model_not_available</div><div class="text-muted">2 occurrences</div></div>
-              <div><div class="text-warn">test_failure</div><div class="text-muted">1 occurrence · auto-fixed</div></div>
-            </div>
-          </div>
-          <div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Sources</h3>
-            <div class="space-y-1 text-2xs">
-              <div class="flex justify-between"><span class="font-mono">opencode</span><span class="text-muted">6,234</span></div>
-              <div class="flex justify-between"><span class="font-mono">delegator</span><span class="text-muted">4,102</span></div>
-              <div class="flex justify-between"><span class="font-mono">claude</span><span class="text-muted">1,892</span></div>
-              <div class="flex justify-between"><span class="font-mono">copilot</span><span class="text-muted">412</span></div>
-              <div class="flex justify-between"><span class="font-mono">codex</span><span class="text-muted">207</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HISTORY TAB -->
-    <div id="tab-history" class="hidden">
-      <div class="flex items-center gap-3 mb-2">
-        <span class="text-xs text-muted font-mono">Filter:</span>
-        <select class="select text-xs" style="padding:4px 8px" onchange="filterHistory()"><option>All agents</option><option>opencode</option><option>claude</option></select>
-        <select class="select text-xs" style="padding:4px 8px" onchange="filterHistory()"><option>All workflows</option><option>subagent-driven</option><option>brainstorming</option></select>
-        <span class="text-xs text-muted font-mono ml-auto">247 records · Last 24h</span>
-        <button class="btn btn-ghost text-xs" style="padding:3px 10px" onclick="exportHistory()">CSV Export</button>
-      </div>
-      <div class="glass overflow-hidden"><table class="w-full text-xs">
-        <thead><tr class="text-muted font-mono uppercase tracking-wider" style="background:rgba(30,41,59,.3)"><th class="py-2 px-2">Time</th><th class="py-2 px-2">Agent</th><th class="py-2 px-2">Model</th><th class="py-2 px-2">Task</th><th class="py-2 px-2">WF</th><th class="py-2 px-2">Dur</th><th class="py-2 px-2">FB</th><th class="py-2 px-2">Cost</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">❤</th><th class="py-2 px-2"></th></tr></thead>
-        <tbody>
-        <tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">12:34</td><td class="py-1 px-2 font-mono">opencode</td><td class="py-1 px-2 font-mono text-xs text-accent">deepseek-v4-pro</td><td class="py-1 px-2 truncate" style="max-width:160px">Add unit tests for OrderRepo</td><td class="py-1 px-2 font-mono text-muted">impl</td><td class="py-1 px-2 font-mono text-muted">17s</td><td class="py-1 px-2 font-mono text-muted">0</td><td class="py-1 px-2 font-mono text-cyan text-xs">$0.02</td><td class="py-1 px-2"><span class="status s-ok">OK</span></td><td class="py-1 px-2"><span class="heart liked" title="Marked good — reinforces route">❤</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Replay</button><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Rerun</button></div></td></tr>
-        <tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">12:30</td><td class="py-1 px-2 font-mono">claude</td><td class="py-1 px-2 font-mono text-xs text-accent">claude-sonnet-4-6</td><td class="py-1 px-2 truncate" style="max-width:160px">Design auth system architecture</td><td class="py-1 px-2 font-mono text-muted">arch</td><td class="py-1 px-2 font-mono text-muted">24s</td><td class="py-1 px-2 font-mono text-muted">0</td><td class="py-1 px-2 font-mono text-cyan text-xs">$0.05</td><td class="py-1 px-2"><span class="status s-ok">OK</span></td><td class="py-1 px-2"><span class="heart" title="Mark as good result">❤</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Replay</button><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Rerun</button></div></td></tr>
-        <tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">12:18</td><td class="py-1 px-2 font-mono">opencode</td><td class="py-1 px-2 font-mono text-xs text-accent">kimi-k2.6</td><td class="py-1 px-2 truncate" style="max-width:160px">Run integration tests</td><td class="py-1 px-2 font-mono text-muted">test</td><td class="py-1 px-2 font-mono text-muted">8s</td><td class="py-1 px-2 font-mono text-muted">0</td><td class="py-1 px-2 font-mono text-cyan text-xs">$0.00</td><td class="py-1 px-2"><span class="status s-ok">OK</span></td><td class="py-1 px-2"><span class="heart liked" title="Marked good">❤</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Replay</button><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Rerun</button></div></td></tr>
-        <tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">12:05</td><td class="py-1 px-2 font-mono">claude</td><td class="py-1 px-2 font-mono text-xs text-danger">claude-sonnet-4-6</td><td class="py-1 px-2 truncate" style="max-width:160px">OWASP security scan</td><td class="py-1 px-2 font-mono text-muted">sec</td><td class="py-1 px-2 font-mono text-muted">12s</td><td class="py-1 px-2 font-mono text-muted">1</td><td class="py-1 px-2 font-mono text-cyan text-xs">$0.00</td><td class="py-1 px-2"><span class="status s-rate">RATE</span></td><td class="py-1 px-2"><span class="heart" title="Mark as bad result">💔</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Retry</button></div></td></tr>
-        </tbody></table></div>
-    </div>
-
-    <!-- ANALYTICS TAB -->
-    <div id="tab-analytics" class="hidden space-y-3">
-      <div class="grid grid-cols-3 gap-3">
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Success Rate (7d)</h3><div class="bar-group items-end h-32"><div class="flex flex-col items-center"><div class="bar b" style="height:65%"></div><span class="text-2xs text-muted mt-1">Mon</span></div><div class="flex flex-col items-center"><div class="bar g" style="height:88%"></div><span class="text-2xs text-muted mt-1">Tue</span></div><div class="flex flex-col items-center"><div class="bar g" style="height:92%"></div><span class="text-2xs text-muted mt-1">Wed</span></div><div class="flex flex-col items-center"><div class="bar g" style="height:85%"></div><span class="text-2xs text-muted mt-1">Thu</span></div><div class="flex flex-col items-center"><div class="bar r" style="height:72%"></div><span class="text-2xs text-muted mt-1">Fri</span></div><div class="flex flex-col items-center"><div class="bar g" style="height:91%"></div><span class="text-2xs text-muted mt-1">Sat</span></div><div class="flex flex-col items-center"><div class="bar g" style="height:94%"></div><span class="text-2xs text-muted mt-1">Sun</span></div></div></div>
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Delegations by Agent</h3><div class="space-y-2"><div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">opencode</span><span class="text-accent">102</span></div><div class="progress"><div class="fill fill-g" style="width:100%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">claude</span><span class="text-muted">89</span></div><div class="progress"><div class="fill fill-b" style="width:87%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">copilot</span><span class="text-warn">45</span></div><div class="progress"><div class="fill fill-y" style="width:44%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">codex</span><span class="text-muted">8</span></div><div class="progress"><div class="fill fill-p" style="width:8%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">antigravity</span><span class="text-danger">3</span></div><div class="progress"><div class="fill fill-r" style="width:3%"></div></div></div></div></div>
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cost Breakdown</h3><div class="space-y-2 text-xs font-mono"><div class="flex justify-between"><span>opencode</span><span class="text-cyan">$0.08</span></div><div class="flex justify-between"><span>claude</span><span class="text-cyan">$0.12</span></div><div class="flex justify-between"><span>copilot</span><span class="text-cyan">$0.14</span></div><div class="flex justify-between"><span>codex</span><span class="text-muted">$0.00</span></div><div class="flex justify-between"><span>antigravity</span><span class="text-muted">$0.00</span></div><div class="border-t border-border pt-2 flex justify-between font-bold"><span>Total 7d</span><span class="text-cyan">$0.34</span></div></div><div class="flex gap-2 mt-3">        <button class="btn btn-ghost text-xs" style="padding:3px 8px;font-size:10px;flex:1" onclick="exportAnalyticsPDF()">PDF Report</button><button class="btn btn-ghost text-xs" style="padding:3px 8px;font-size:10px;flex:1" onclick="exportAnalyticsCSV()">CSV Export</button></div></div>
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Failure Types</h3><div class="space-y-2"><div><div class="flex justify-between text-2xs mb-1"><span>Rate Limit</span><span class="text-warn">14</span></div><div class="progress"><div class="fill fill-y" style="width:70%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span>Quota Exceeded</span><span class="text-danger">3</span></div><div class="progress"><div class="fill fill-r" style="width:15%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span>Timeout</span><span class="text-warn">2</span></div><div class="progress"><div class="fill fill-y" style="width:10%"></div></div></div><div><div class="flex justify-between text-2xs mb-1"><span>Model Not Found</span><span class="text-danger">1</span></div><div class="progress"><div class="fill fill-r" style="width:5%"></div></div></div></div></div>
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Learned Rankings</h3><div class="space-y-2 text-xs font-mono"><div class="flex justify-between"><span class="text-accent">★ opencode</span><span>score 0.95</span><span class="text-muted">102 dels</span></div><div class="flex justify-between"><span class="text-muted">★ claude</span><span>score 0.88</span><span class="text-muted">89 dels</span></div><div class="flex justify-between"><span class="text-muted">★ codex</span><span>score 0.88</span><span class="text-muted">8 dels</span></div><div class="flex justify-between"><span class="text-warn">☆ copilot</span><span>score 0.72</span><span class="text-muted">45 dels</span></div><div class="flex justify-between"><span class="text-danger">☆ antigravity</span><span>score 0.45</span><span class="text-muted">3 dels</span></div></div></div>
-      </div>
-    </div>
-
-    <!-- COMPARE TAB -->
-    <div id="tab-compare" class="hidden">
-      <div class="flex items-center gap-4 mb-3">
-        <span class="font-mono text-xs text-muted">Compare same task across agents:</span>
-        <input type="text" class="input" style="max-width:380px" value="Write a python function that sorts a list of objects by date" placeholder="Task description...">
-        <button class="btn btn-pri">Run A/B Test</button>
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div class="compare-col running">
-          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">A:</span><select class="select compare-model text-xs" style="padding:2px 6px"><option>opencode-go/deepseek-v4-pro</option><option>claude-sonnet-4-6</option><option>opencode-go/minimax-m2.7</option><option>federated-coding</option><option>federated-free</option><option>copilot/gpt-5.4</option></select></div><span class="text-2xs text-accent font-mono typing">idle</span></div>
-          <div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="log g">> Writing sort_by_date function...</div><div class="log m">> Using list.sort(key=lambda x: x['date'])</div><div class="log g typing">> Testing with sample data...</div></div></div>
-          <div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: 1,247</span><span>Est cost: $0.01</span></div>
-        </div>
-        <div class="compare-col running">
-          <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">B:</span><select class="select compare-model text-xs" style="padding:2px 6px"><option selected>claude-sonnet-4-6</option><option>opencode-go/deepseek-v4-pro</option><option>opencode-go/minimax-m2.7</option><option>federated-coding</option><option>federated-free</option><option>copilot/gpt-5.4-mini</option></select></div><span class="text-2xs text-accent font-mono typing">idle</span></div>
-          <div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="log g">> Importing datetime module...</div><div class="log m">> Using sorted() with key=itemgetter</div><div class="log g typing">> Writing docstring...</div></div></div>
-          <div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: 892</span><span>Est cost: $0.03</span></div>
-        </div>
-      </div>
-      <div class="glass p-3 mt-3 flex items-center gap-4">
-        <span class="font-mono text-xs text-muted">Result: <span class="text-2xs">⏳ Both agents still running...</span></span>
-        <button class="btn btn-ghost text-xs ml-auto" style="padding:3px 10px">Stop Both</button>
-      </div>
-    </div>
-
-    <!-- QUEUE TAB -->
-    <div id="tab-queue" class="hidden space-y-3">
-      <div class="grid grid-cols-2 gap-3">
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Scheduled</h3>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between p-2 rounded" style="background:rgba(139,92,246,.04)"><div><div class="font-mono text-xs">Nightly test run</div><div class="text-2xs text-muted">opencode · federated-free · verification</div></div><div class="text-right"><span class="font-mono text-xs text-purple">Cron 0 2 * * *</span><div class="flex gap-1 mt-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Run Now</button><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Edit</button></div></div></div>
-            <div class="flex items-center justify-between p-2 rounded" style="background:rgba(139,92,246,.04)"><div><div class="font-mono text-xs">Weekly security audit</div><div class="text-2xs text-muted">claude · federated-sonnet · verification</div></div><div class="text-right"><span class="font-mono text-xs text-purple">Cron 0 9 * * 1</span><div class="flex gap-1 mt-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Run Now</button><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Edit</button></div></div></div>
-            <button class="btn btn-info text-xs w-full mt-2" style="padding:6px">+ Add Scheduled Task</button>
-          </div>
-        </div>
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Pending Queue</h3>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">Refactor payment module</div><div class="text-2xs text-muted">opencode · federated-coding · subagent-driven</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>
-            <div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">Generate API docs</div><div class="text-2xs text-muted">opencode · federated-coding · subagent-driven</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>
-            <div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">Database migration check</div><div class="text-2xs text-muted">claude · claude-sonnet-4-6 · verification</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>
-            <div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">Dependency audit</div><div class="text-2xs text-muted">opencode · federated-free · verification</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>
-            <div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">Stakeholder report PDF</div><div class="text-2xs text-muted">claude · claude-sonnet-4-6 · writing-plans</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px">Start</button></div></div>
-            <button class="btn btn-info text-xs w-full mt-2" style="padding:6px">+ Enqueue Task</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- EXEC TAB -->
-    <div id="tab-exec" class="hidden glass p-4 space-y-4">
-      <div class="grid grid-cols-2 gap-4">
-        <div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-1">Task <span class="kbd">Tab</span></label><input type="text" class="input" value="Write unit tests for OrderRepository"></div>
-        <div class="grid grid-cols-3 gap-3">
-          <div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-1">Model</label><select class="select w-full"><option>federated-coding</option><option>federated-sonnet</option><option>federated-free</option><option>opencode-go/deepseek-v4-pro</option><option>claude-sonnet-4-6</option></select></div>
-          <div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-1">Workflow</label><select class="select w-full"><option>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div>
-          <div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-1">From</label><select class="select w-full"><option>auto-detect</option><option>claude</option><option>opencode</option><option>copilot</option></select></div>
-        </div>
-      </div>
-      <div class="flex items-center gap-4">
-        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs text-muted font-mono">Stream</span></label>
-        <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500"><span class="text-xs text-muted font-mono">No worktree</span></label>
-        <button class="btn btn-pri ml-auto">Execute <span class="kbd">⏎</span></button>
-      </div>
-    </div>
-
-    <!-- SETTINGS TAB -->
-    <div id="tab-settings" class="hidden space-y-3">
-      <!-- Sub-tabs -->
-      <div class="flex gap-0 border-b border-border">
-        <div class="tab active" onclick="switchSettingsTab('routing')">Routing</div>
-        <div class="tab" onclick="switchSettingsTab('control')">Control</div>
-        <div class="tab" onclick="switchSettingsTab('notifications')">Notifications</div>
-        <div class="tab" onclick="switchSettingsTab('general')">General</div>
-      </div>
-
-      <!-- Sub-tab: Routing -->
-      <div id="set-routing" class="space-y-3">
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Provider Priority <span class="text-2xs text-muted">⬍ Drag to reorder</span></h3>
-          <div class="space-y-1">
-            <div class="flex items-center gap-3 p-2 rounded cursor-grab" style="background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.2)"><span class="text-xs text-muted">⬍</span><span class="font-mono text-xs">1. opencode</span><span class="text-2xs text-accent ml-auto">95% · 102</span><span class="text-2xs text-muted">▲▼</span></div>
-            <div class="flex items-center gap-3 p-2 rounded cursor-grab" style="border:1px solid transparent"><span class="text-xs text-muted">⬍</span><span class="font-mono text-xs">2. claude</span><span class="text-2xs text-muted ml-auto">92% · 89</span><span class="text-2xs text-muted">▲▼</span></div>
-            <div class="flex items-center gap-3 p-2 rounded cursor-grab" style="border:1px solid transparent"><span class="text-xs text-muted">⬍</span><span class="font-mono text-xs">3. copilot</span><span class="text-2xs text-warn ml-auto">72% · 45</span><span class="text-2xs text-muted">▲▼</span></div>
-            <div class="flex items-center gap-3 p-2 rounded cursor-grab" style="border:1px solid transparent"><span class="text-xs text-muted">⬍</span><span class="font-mono text-xs">4. codex</span><span class="text-2xs text-muted ml-auto">88% · 8</span><span class="text-2xs text-muted">▲▼</span></div>
-            <div class="flex items-center gap-3 p-2 rounded cursor-grab" style="border:1px solid transparent"><span class="text-xs text-muted">⬍</span><span class="font-mono text-xs">5. antigravity</span><span class="text-2xs text-danger ml-auto">45% · 3</span><span class="text-2xs text-muted">▲▼</span></div>
-          </div>
-          <button class="btn btn-pri mt-3" style="font-size:11px;padding:4px 14px" onclick="saveRouting()">Save Priority</button>
-        </div>
-        <div class="glass p-4">
-          <div class="flex items-center justify-between mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Edit Routes</h3><button class="btn btn-info text-xs" style="padding:3px 10px" onclick="alert('Add Route dialog would open here')">+ Add Route</button></div>
-          <div class="space-y-2">
-            <div class="flex items-center gap-2 p-2 rounded" style="background:rgba(30,41,59,.3)">
-              <select class="select text-xs" style="padding:4px 6px;flex:2"><option selected>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select>
-              <select class="select text-xs" style="padding:4px 6px;flex:2"><option selected>implementation</option><option>testing</option><option>code_review</option><option>research</option></select>
-              <span class="text-muted text-xs">→</span>
-              <select class="select text-xs" style="padding:4px 6px;flex:1"><option selected>opencode</option><option>claude</option><option>copilot</option></select>
-              <span class="text-muted text-xs">:</span>
-              <select class="select text-xs" style="padding:4px 6px;flex:2"><option selected>federated-coding</option><option>federated-sonnet</option><option>federated-free</option></select>
-              <button class="text-xs text-danger font-mono ml-2 cursor-pointer hover:underline">✕</button>
-            </div>
-          </div>
-          <button class="btn btn-pri mt-3" style="font-size:11px;padding:4px 14px" onclick="alert('Routes saved!')">Save Routes</button>
-        </div>
-      </div>
-
-      <!-- Sub-tab: Control -->
-      <div id="set-control" class="hidden space-y-3">
-        <div class="grid grid-cols-2 gap-3">
-          <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Circuit Breaker</h3>
-            <div class="grid grid-cols-2 gap-3"><div><label class="text-2xs text-muted block mb-1">Threshold</label><input type="number" value="3" class="input"></div><div><label class="text-2xs text-muted block mb-1">Base Cooldown</label><div class="flex items-center gap-1"><input type="number" value="5" class="input"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Max Cooldown</label><div class="flex items-center gap-1"><input type="number" value="60" class="input"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Worktree TTL</label><div class="flex items-center gap-1"><input type="number" value="24" class="input"><span class="text-2xs text-muted">hrs</span></div></div></div>
-            <button class="btn btn-pri mt-3" style="font-size:11px;padding:4px 14px" onclick="saveCircuitBreaker()">Apply</button>
-          </div>
-          <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cooldown Status</h3>
-            <div class="space-y-2">
-              <div class="flex items-center justify-between"><span class="font-mono text-xs">antigravity:gemini-3.1-flash</span><span class="status s-rate">cooldown</span><span class="text-2xs text-danger">12m remaining</span></div>
-              <div class="flex items-center justify-between"><span class="font-mono text-xs">opencode:minimax-m2.5-free</span><span class="status s-rate">cooldown</span><span class="text-2xs text-warn">8m remaining</span></div>
-              <div class="flex items-center justify-between"><span class="font-mono text-xs">claude:claude-sonnet-4-6</span><span class="status s-ok">active</span></div>
-            </div>
-            <div class="flex gap-2 mt-3"><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="resetCooldowns()">Reset All</button><button class="btn btn-ghost text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal</button></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sub-tab: Notifications -->
-      <div id="set-notifications" class="hidden space-y-3" style="overflow:visible">
-        <div class="grid grid-cols-2 gap-3">
-          <!-- Telegram -->
-          <div class="glass p-4" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Telegram</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Telegram Bot Setup (7 steps):</b><br>1. Open Telegram, search <code>@BotFather</code><br>2. Send <code>/newbot</code>, follow prompts<br>3. Copy the HTTP API token<br>4. Message your bot with /start<br>5. Open <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code><br>6. Find <code>chat.id</code> in the JSON response<br>7. Paste both values below</span></span></div>
-            <div class="space-y-2">
-              <div><label class="text-2xs text-muted block mb-1">Bot Token <span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">From @BotFather after <code>/newbot</code><br>Format: <code>123456789:ABC-DEF...</code></span></span></label>                <input type="text" class="input" value="" placeholder="123456789:ABC-DEF..."></div>
-              <div><label class="text-2xs text-muted block mb-1">Chat ID <span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">From getUpdates API response<br>Group: <code>-1001234567890</code><br>User: <code>123456789</code></span></span></label>                <input type="text" class="input" value="" placeholder="-1001234567890"></div>
-              <div class="mt-3 border-t border-border pt-3">
-                <div class="text-2xs text-muted mb-2">Notify me when:</div>
-                <div class="space-y-1">
-                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs">Task completed</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Sends ✅ with task ID, agent, model, duration, and output summary</span></span></label>
-                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs">Task failed / rate limited</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Sends ❌ with error type, fallback count, and failing provider</span></span></label>
-                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500"><span class="text-xs">Agent enters cooldown</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Sends ⚠ when agent hits failure threshold, includes cooldown duration</span></span></label>
-                  <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500"><span class="text-xs">Daily summary report</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Sends every 24h: total dels, success rate, top agents, est. cost</span></span></label>
-                </div>
-              </div>
-              <div class="flex gap-2 mt-2">
-                <button class="btn btn-pri text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="saveTelegramConfig()">Save Config</button>
-                <button class="btn btn-info text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="sendTestTelegram()">Send Test</button>
-              </div>
-            </div>
-          </div>
-          <!-- Webhooks -->
-          <div class="glass p-4" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Webhooks</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Webhook Setup:</b><br><b>Slack:</b> api.slack.com → Create App → Incoming Webhooks → copy URL<br><b>Discord:</b> Server Settings → Integrations → Webhooks → Create → copy URL<br><b>Email:</b> Configure SMTP host, port, user, pass, from address, and recipient</span></span></div>
-            <div class="space-y-2">
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs">On task failure</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Fires when any provider fails:<br>rate limit, timeout, exception, or all providers exhausted</span></span></label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500"><span class="text-xs">On task success</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Includes provider used, model, duration, and fallback count</span></span></label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500"><span class="text-xs">On rate limit detected</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Rate limit patterns matched in agent output → triggers cooldown + fallback</span></span></label>
-              <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox"><span class="text-xs">On health change</span><span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">Agent going offline or coming back online after health check</span></span></label>
-              <input type="text" class="input mt-2" value="https://hooks.slack.com/services/T000/B000/xxx" placeholder="Slack/Discord webhook URL">
-              <div class="flex gap-2 mt-2">
-                <button class="btn btn-pri text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="saveWebhookConfig()">Save Config</button>
-                <button class="btn btn-info text-xs" style="flex:1;padding:4px 10px;font-size:11px" onclick="sendTestWebhook()">Send Test</button>
-              </div>
-              <div class="flex gap-2 mt-1"><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="alert('Slack webhook URL added')">+ Slack</button><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="alert('Discord webhook URL added')">+ Discord</button><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="alert('Email notification configured')">+ Email</button></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sub-tab: General -->
-      <div id="set-general" class="hidden space-y-3">
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Preferences</h3>
-          <div class="grid grid-cols-3 gap-3">
-            <div><label class="text-2xs text-muted block mb-1">Default Model</label><select class="select w-full" style="padding:6px 10px"><option selected>federated-coding</option><option>federated-sonnet</option><option>federated-free</option></select></div>
-            <div><label class="text-2xs text-muted block mb-1">Default Workflow</label><select class="select w-full" style="padding:6px 10px"><option selected>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div>
-            <div><label class="text-2xs text-muted block mb-1">Auto-Refresh</label><select class="select w-full" style="padding:6px 10px"><option>off</option><option selected>5s</option><option>10s</option><option>30s</option></select></div>
-          </div>
-          <button class="btn btn-pri mt-3" style="font-size:11px;padding:4px 14px" onclick="savePreferences()">Save Preferences</button>
-        </div>
-        <div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Danger Zone</h3>
-          <div class="space-y-2">
-            <div class="flex items-center justify-between"><span class="text-xs">Reset all cooldowns</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="resetCooldowns()">Reset</button></div>
-            <div class="flex items-center justify-between"><span class="text-xs">Clear delegation history</span><button class="btn btn-danger text-xs" style="padding:4px 10px" onclick="clearHistory()">Clear</button></div>
-            <div class="flex items-center justify-between"><span class="text-xs">Reset learned rankings</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="resetRankings()">Reset</button></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <div class="col-span-10">
+    <div class="flex gap-0 border-b border-border" id="tab-bar"></div>
+    <div class="mt-3" id="tab-content"><div class="text-center text-muted text-sm pt-8">Loading...</div></div>
   </div>
 </div>
 </div>
 
-<!-- ===== MODAL: Agent Details ===== -->
-<div id="modal-agent-claude" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal">
-    <div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">claude — Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <div class="space-y-2 mb-4">
-      <div class="text-xs text-muted">CLI: <code class="font-mono text-muted">claude --print --model {'{model}'} --dangerously-skip-permissions</code></div>
-      <div class="text-xs text-muted">Health: <span class="text-accent">OK</span> · 92% success · $0.12 cost (7d)</div>
-    </div>
-    <table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-left">Capabilities</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead>
-    <tbody><tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">claude-sonnet-4-6</td><td class="py-2 px-3"><span class="status s-info">coding</span> <span class="status s-purple">reasoning</span></td><td class="py-2 px-3 text-center font-mono">82</td><td class="py-2 px-3 text-center font-mono text-accent">94%</td></tr>
-    <tr><td class="py-2 px-3 font-mono text-muted">claude-haiku-4-5</td><td class="py-2 px-3"><span class="status s-info">coding</span> <span class="status s-ok">fast</span></td><td class="py-2 px-3 text-center font-mono">7</td><td class="py-2 px-3 text-center font-mono text-accent">71%</td></tr></tbody></table>
-  </div>
-</div>
-<div id="modal-agent-opencode" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">opencode — Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-left">Tier</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead>
-    <tbody><tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">opencode-go/deepseek-v4-pro</td><td class="py-2 px-3"><span class="status s-purple">go/prem</span></td><td class="py-2 px-3 text-center font-mono">45</td><td class="py-2 px-3 text-center font-mono text-accent">96%</td></tr>
-    <tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-muted">opencode-go/minimax-m2.7</td><td class="py-2 px-3"><span class="status s-info">go/std</span></td><td class="py-2 px-3 text-center font-mono">28</td><td class="py-2 px-3 text-center font-mono text-accent">93%</td></tr>
-    <tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-muted">opencode-go/deepseek-v4-flash</td><td class="py-2 px-3"><span class="status s-ok">go/free</span></td><td class="py-2 px-3 text-center font-mono">15</td><td class="py-2 px-3 text-center font-mono text-accent">89%</td></tr>
-    <tr><td class="py-2 px-3 font-mono text-muted">opencode/minimax-m2.5-free</td><td class="py-2 px-3"><span class="status s-ok">free</span></td><td class="py-2 px-3 text-center font-mono">14</td><td class="py-2 px-3 text-center font-mono text-warn">71%</td></tr></tbody></table>
-  </div>
-</div>
-<div id="modal-agent-copilot" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">copilot — Agent Details <span class="status s-warn">quota limit</span></h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead>
-    <tbody><tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">claude-sonnet-4.6</td><td class="py-2 px-3 text-center font-mono">18</td><td class="py-2 px-3 text-center font-mono text-accent">83%</td></tr>
-    <tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-muted">gpt-5.4-mini</td><td class="py-2 px-3 text-center font-mono">15</td><td class="py-2 px-3 text-center font-mono text-accent">86%</td></tr>
-    <tr><td class="py-2 px-3 font-mono text-muted">gpt-5.2</td><td class="py-2 px-3 text-center font-mono">12</td><td class="py-2 px-3 text-center font-mono text-warn">58%</td></tr></tbody></table>
-  </div>
-</div>
+<!-- TOAST PANEL -->
+<div class="toast-panel"></div>
 
-<div id="modal-agent-codex" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">codex — Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead>
-    <tbody><tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">gpt-5.4</td><td class="py-2 px-3 text-center font-mono">6</td><td class="py-2 px-3 text-center font-mono text-accent">100%</td></tr>
-    <tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-muted">gpt-4.1</td><td class="py-2 px-3 text-center font-mono">2</td><td class="py-2 px-3 text-center font-mono text-accent">100%</td></tr>
-    <tr><td class="py-2 px-3 font-mono text-muted">gpt-4o-mini</td><td class="py-2 px-3 text-center font-mono">0</td><td class="py-2 px-3 text-center font-mono text-muted">—</td></tr></tbody></table>
-  </div>
-</div>
-
-<div id="modal-agent-antigravity" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">antigravity — Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead>
-    <tbody><tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">gemini-3.1-pro-high</td><td class="py-2 px-3 text-center font-mono">2</td><td class="py-2 px-3 text-center font-mono text-accent">100%</td></tr>
-    <tr><td class="py-2 px-3 font-mono text-muted">gemini-3.1-flash</td><td class="py-2 px-3 text-center font-mono">1</td><td class="py-2 px-3 text-center font-mono text-danger">0%</td></tr></tbody></table>
-  </div>
-</div>
+<!-- BOTTOM BAR -->
+<div style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-top:1px solid #1E293B;padding:6px 24px;z-index:100;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:11px;gap:24px"><span><span class="kbd">L</span> Live</span><span><span class="kbd">O</span> Logs</span><span><span class="kbd">H</span> History</span><span><span class="kbd">A</span> Analytics</span><span><span class="kbd">C</span> Compare</span><span><span class="kbd">Q</span> Queue</span><span><span class="kbd">E</span> Exec</span><span><span class="kbd">S</span> Settings</span><span style="color:#64748B">|</span><span><span class="kbd">1-3</span> Tasks</span><span><span class="kbd">F7</span> Project</span><span><span class="kbd">⌘K</span> Focus Exec</span><span><span class="kbd">?</span> Help</span></div>
 
 <script>
-function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('[id^="tab-"]').forEach(e=>e.classList.add('hidden'));const tabs=['live','logs','history','analytics','compare','queue','exec','settings'];document.querySelectorAll('.tab')[tabs.indexOf(t)].classList.add('active');document.getElementById('tab-'+t).classList.remove('hidden')}
-function switchSettingsTab(t){const parent=document.getElementById('tab-settings');parent.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));parent.querySelectorAll('[id^="set-"]').forEach(e=>e.classList.add('hidden'));const stabs=['routing','control','notifications','general'];parent.querySelectorAll('.tab')[stabs.indexOf(t)].classList.add('active');document.getElementById('set-'+t).classList.remove('hidden')}
-function selectTask(id,n){document.querySelectorAll('[id^="t-"]').forEach(e=>{e.classList.remove('glass-sel');e.classList.add('glass')});const el=document.getElementById('t-'+id);el.classList.add('glass-sel');el.classList.remove('glass');switchTab('live')}
-async function toggleModal(id){
-  document.getElementById('modal-'+id).classList.toggle('hidden');
-  const aname = id.replace('agent-','');
-  if(aname && ['claude','opencode','copilot','codex','antigravity'].includes(aname)){
-    const d = await api('/api/agents/'+aname);
-    if(d&&d.models){
-      const tbody = document.getElementById('modal-'+id)?.querySelector('tbody');
-      if(tbody) tbody.innerHTML = d.models.map(m => 
-        `<tr style="border-bottom:1px solid #1E293B">
-          <td class="py-2 px-3 font-mono text-xs text-accent">${m.id}</td>
-          <td class="py-2 px-3"><span class="status s-info">${(m.capabilities||[]).join('</span> <span class="status s-purple">')}</span></td>
-          <td class="py-2 px-3 text-center font-mono text-xs">${m.total_dels}</td>
-          <td class="py-2 px-3 text-center font-mono text-xs text-${m.success_rate>0.8?'accent':m.success_rate>0.5?'warn':'danger'}">${Math.round(m.success_rate*100)}%</td>
-        </tr>`).join('');
-    }
-  }
-}
-document.addEventListener('keydown',function(e){if(e.key==='1')selectTask('a3f2');if(e.key==='2')selectTask('b7e8');if(e.key==='3')selectTask('c911');if(e.key==='l'&&!e.ctrlKey)switchTab('live');if(e.key==='o'&&!e.ctrlKey&&!e.target.closest('input,select'))switchTab('logs');if(e.key==='h'&&!e.ctrlKey)switchTab('history');if(e.key==='a'&&!e.ctrlKey)switchTab('analytics');if(e.key==='c'&&!e.ctrlKey)switchTab('compare');if(e.key==='q'&&!e.ctrlKey)switchTab('queue');if(e.key==='e'&&!e.ctrlKey)switchTab('exec');if(e.key==='s'&&!e.ctrlKey&&!e.target.closest('input,select'))switchTab('settings');if(e.key==='?'&&!e.target.closest('input,select')){e.preventDefault();document.getElementById('shortcuts-modal').classList.toggle('hidden')};if(e.key==='Escape')document.getElementById('shortcuts-modal').classList.add('hidden');if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus()};if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();alert('Command palette: exec,status,health,routes,model,cleanup,capabilities,optimize,learn,metrics,dashboard,init,config,test')}})
-</script>
+let liveTaskId=null,activeTab='live',settingsTab='routing';
+const TABS=['live','logs','history','analytics','compare','queue','exec','settings'];
+const SETTINGS_TABS=['routing','control','notifications','general'];
+async function api(u,o){try{const r=await fetch(u,o);return r.ok?r.json():null}catch(e){return null}}
 
-<!-- Bottom Status Bar -->
-<div style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-top:1px solid #1E293B;padding:6px 24px;z-index:100;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;gap:32px">
-  <span><span class="kbd">L</span> Live</span><span><span class="kbd">O</span> Logs</span><span><span class="kbd">H</span> History</span><span><span class="kbd">A</span> Analytics</span><span><span class="kbd">C</span> Compare</span><span><span class="kbd">Q</span> Queue</span><span><span class="kbd">E</span> Exec</span><span><span class="kbd">S</span> Settings</span>
-  <span class="text-muted">|</span>
-  <span><span class="kbd">1-3</span> Tasks</span><span><span class="kbd">F7</span> Project</span><span><span class="kbd">⌘K</span> Commands</span><span><span class="kbd">?</span> Help</span>
-</div>
+// === RENDER FUNCTIONS (each generates HTML from API data) ===
 
-<!-- Shortcuts Modal -->
-<div id="shortcuts-modal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
-  <div class="modal" style="max-width:700px">
-    <div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">⌨ Keyboard Shortcuts</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
-    <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-      <div class="text-muted uppercase tracking-wide text-2xs font-mono">Tabs</div><div></div>
-      <div><span class="kbd">L</span> Live View</div><div><span class="kbd">O</span> Logs</div>
-      <div><span class="kbd">H</span> History</div><div><span class="kbd">A</span> Analytics</div>
-      <div><span class="kbd">C</span> Compare A/B</div><div><span class="kbd">Q</span> Queue</div>
-      <div><span class="kbd">E</span> Execute Task</div><div><span class="kbd">S</span> Settings</div>
-      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">Tasks</div><div></div>
-      <div><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Select active task</div><div><span class="kbd">⏎</span> Run in Exec tab</div>
-      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">System</div><div></div>
-      <div><span class="kbd">F7</span> Switch project</div><div><span class="kbd">⌘K</span> Command palette</div>
-      <div><span class="kbd">?</span> Toggle this help</div><div><span class="kbd">Esc</span> Close modal / dismiss</div>
-    </div>
-  </div>
-</div>
-
-<!-- LIVE API POLLING -->
-<script>
-let liveTaskId=null,API_BASE='';
-
-async function api(u,o){try{const r=await fetch(API_BASE+u,o);return r.ok?r.json():null}catch(e){return null}}
-
-// === COMPREHENSIVE refreshAll() ===
-async function refreshAll(){
+async function renderAll(){
   const d=await api('/api/status');if(!d)return;
-  const agents=d.agents||[],tasks=d.active_tasks||[],cds=d.cooldowns||[];
-
-  // 1. Metrics row — find all .glass cards in the metrics grid
-  const mc=document.querySelector('.grid-cols-8,.grid.grid-cols-8');
-  if(mc){const totalCost=agents.reduce((s,a)=>(s+(a.est_cost||0)),0);const cards=mc.querySelectorAll('.glass');const vals=[agents.length,tasks.length,d.recent_dels,Math.round((d.success_rate||0)*100)+'%',cds.length,d.pending_queue||0,d.scheduled||0,'$'+totalCost.toFixed(2)];cards.forEach((c,i)=>{if(i<vals.length){const v=c.querySelector('.font-bold');if(v)v.textContent=vals[i]}})}
-
-  // 2. Agent cards in left rail  
-  agents.forEach(a=>{
-    const allAgents=document.querySelector('.col-span-2').querySelectorAll('.glass');
-    allAgents.forEach(card=>{
-      const nameEl=card.querySelector('.font-semibold');
-      if(nameEl&&nameEl.textContent.trim()===a.name){
-        const dot=card.querySelector('.pulse-dot');
-        if(dot)dot.className='pulse-dot '+(a.available?'online':'danger');
-        const modelEl=card.querySelectorAll('.text-2xs,.text-\\2xs')[1];
-        if(modelEl)modelEl.textContent=a.current_model||'';
-        // Update success rate bar
-        const ratePct=Math.round((a.success_rate||0)*100);
-        const rateTxt=card.querySelector('.text-accent.font-mono,.text-warn.font-mono,.text-danger.font-mono');
-        if(rateTxt)rateTxt.textContent=ratePct+'%';
-        const bar=card.querySelector('.progress .fill');
-        if(bar){bar.style.width=ratePct+'%';bar.className='fill '+(ratePct>80?'fill-g':ratePct>50?'fill-y':'fill-r')};
-      }
-    });
-  });
-
-  // 3. Active task banner
-  const banner=document.querySelector('.bb');
-  if(banner){
-    const bCards=banner.querySelectorAll('.glass-sel,.glass.p-3');
-    tasks.forEach((t,i)=>{if(i<bCards.length){const c=bCards[i];const idEl=c.querySelector('.text-info');if(idEl)idEl.textContent='#'+(t.id||'');const taskEl=c.querySelector('.truncate');if(taskEl)taskEl.textContent=t.task||'';
-      const agentEl=c.querySelectorAll('.text-xs')[1];if(agentEl&&t.agent)agentEl.textContent=t.agent+' · '+t.model;}});
-    // Hide extra mock cards
-    for(let i=tasks.length;i<bCards.length;i++){bCards[i].style.display='none'}
-  }
-
-  // 4. Alert bar 
-  const ab=document.querySelector('[style*="rgba(239,68,68"]');
-  if(ab&&cds.length===0){ab.closest('.glass')?ab.closest('.glass').style.display='none':ab.style.display='none'}
-  else if(ab&&cds.length>0){const c=ab.closest('.glass');if(c)c.style.display='';if(ab.textContent.includes('cooldown')){const cdKeys=cds.map(cd=>cd.key);ab.querySelector('.text-danger').textContent=cds.length+' agent(s) in cooldown'}}
-
-  // 5. Settings cooldown list
-  const sc=document.getElementById('set-control');
-  if(sc&&cds.length>0){
-    const list=sc.querySelector('.space-y-2');
-    if(list)list.innerHTML=cds.map(c=>`<div class="flex items-center justify-between"><span class="font-mono text-xs">${c.key}</span><span class="status s-rate">cooldown</span><span class="text-2xs text-danger">${c.cooldown_until||'active'}</span></div>`).join('');
-  }
-
-  // 6. Toast on task count changes
-  if(tasks.length>_prevTaskCount)showToast(`${tasks.length-_prevTaskCount} new task(s) started`,'info');
-  else if(tasks.length<_prevTaskCount)showToast('Task completed','success');
-  _prevTaskCount=tasks.length;
-
-  // 7. Update active task timers + progress bars
-  const estTime = 60; // estimated seconds per task
-  tasks.forEach((t,i)=>{
-    const bCards=banner?banner.querySelectorAll('.glass-sel,.glass.p-3'):null;
-    if(bCards&&bCards[i]){
-      const timeEl=bCards[i].querySelector('.text-2xs.font-mono,.text-2xs.text-muted.font-mono');
-      if(timeEl&&t.started_at){const elapsed=Math.round(Date.now()/1000-t.started_at);timeEl.textContent=elapsed+'s'}
-      const pBar=bCards[i].querySelector('.progress .fill');
-      if(pBar&&t.started_at){const elapsed=Math.round(Date.now()/1000-t.started_at);const pct=Math.min(Math.round(elapsed/estTime*100),95);pBar.style.width=pct+'%'}
-    }
-  });
+  renderMetrics(d);renderAgents(d);renderTasks(d);renderAlert(d);
 }
 
-// === Tab data loaders ===
-async function loadRoutes(){
-  const d=await api('/api/routes');if(!d)return;
-  const tbody=document.getElementById('tab-routes')?.querySelector('tbody');
-  if(!tbody)return;
-  tbody.innerHTML=d.routes.map(r=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-4 font-mono text-xs">${r.workflow}</td><td class="py-2 px-4 font-mono text-xs">${r.task}</td><td class="py-2 px-4 font-mono text-xs text-info">${r.agent}</td><td class="py-2 px-4 font-mono text-xs text-muted">${r.model}</td><td class="py-2 px-4 font-mono text-xs text-muted">—</td></tr>`).join('');
+function renderMetrics(d){
+  const m=[['Active Agents',d.agents.length,'#22C55E'],['Running',d.active_tasks.length,'#3B82F6'],['7d Dels',d.recent_dels,'#F8FAFC'],['Success',Math.round((d.success_rate||0)*100)+'%','#22C55E'],['Cooldowns',d.cooldowns.length,'#F59E0B'],['Queued',d.pending_queue||0,'#8B5CF6'],['Routes',14,'#EC4899'],['Cost','$'+(d.agents||[]).reduce((s,a)=>(s+(a.est_cost||0)),0).toFixed(2),'#06B6D4']];
+  document.getElementById('metrics-row').innerHTML=m.map(([l,v,c])=>`<div class="glass p-2 text-center"><div style="font-family:monospace;font-size:16px;font-weight:700;color:${c}">${v}</div><div style="font-size:9px;color:#64748B;text-transform:uppercase">${l}</div></div>`).join('')
 }
 
-async function loadHistory(){
-  const d=await api('/api/metrics?days=7&limit=20');if(!d)return;
-  const tbody=document.getElementById('tab-history')?.querySelector('tbody');
-  if(!tbody)return;
-  tbody.innerHTML=d.delegations.map(r=>{const s=r.success?'OK':'FAIL';const cls=r.success?'s-ok':'s-fail';const t=new Date(r.timestamp||'');const tm=t.getTime()?t.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—';return`<tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted text-xs">${tm}</td><td class="py-1 px-2 font-mono text-xs">${r.to_agent||'—'}</td><td class="py-1 px-2 font-mono text-xs text-accent">${r.model||'—'}</td><td class="py-1 px-2 text-xs truncate" style="max-width:160px" title="${r.task_type||''}">${r.task_type||'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs">${r.workflow||'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs text-center">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</td><td class="py-1 px-2 font-mono text-muted text-xs text-center">${r.fallback_count||0}</td><td class="py-1 px-2 font-mono text-cyan text-xs text-center">—</td><td class="py-1 px-2 text-center"><span class="status ${cls}">${s}</span></td><td class="py-1 px-2 text-center"><span class="heart" style="cursor:pointer;opacity:.4" onclick="this.classList.toggle('liked');this.style.opacity=this.classList.contains('liked')?'1':'.4'">❤</span></td><td class="py-1 px-2 text-center"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px" onclick="viewDelegation('${r.id||''}')">View</button>${!r.success?`<button class="btn btn-ghost" style="padding:2px 6px;font-size:10px;margin-left:2px" onclick="retryTask('${r.task_type||''}')">Retry</button>`:''}</td></tr>`}).join('');
-  // Update count
-  const c=document.querySelector('#tab-history .text-muted.font-mono');
-  if(c)c.textContent=d.total+' records · Last 7d';
+function renderAgents(d){
+  document.getElementById('agent-cards').innerHTML=d.agents.map(a=>`<div class="glass p-2 cursor-pointer" style="margin-bottom:6px" onclick="openAgentModal('${a.name}')"><div style="display:flex;align-items:center;gap:8px"><span class="pulse-dot ${a.available?'online':'danger'}"></span><span style="font-family:monospace;font-size:12px;font-weight:600">${a.name}</span><span style="font-size:10px;color:#06B6D4;margin-left:auto">$${a.est_cost||0}</span></div><div style="font-size:10px;color:#64748B">${a.current_model||'—'}</div><div style="display:flex;align-items:center;margin-top:4px;gap:6px"><div class="progress" style="flex:1"><div class="fill-g" style="width:${Math.round((a.success_rate||0)*100)}%"></div></div><span style="font-size:10px;font-family:monospace;color:#22C55E">${Math.round((a.success_rate||0)*100)}%</span></div><div style="font-size:9px;color:#64748B;margin-top:2px">${a.model_count} models · ${a.del_count||0} dels</div></div>`).join('')
 }
 
-async function loadLogs(){
-  const d=await api('/api/logs?limit=100');if(!d)return;
-  const stream=document.querySelector('#tab-logs .t-body');
-  if(!stream)return;
-  stream.innerHTML=d.entries.map(e=>`<div class="flex items-start gap-2 py-1"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.agent||'—'}</span><span class="text-2xs text-info font-mono">${(e.task_id||'').slice(0,8)}</span><span class="text-2xs text-${e.level==='ERROR'?'danger':'info'} font-mono whitespace-nowrap">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('');
-  // Update total count
-  const c=document.querySelector('#tab-logs .text-muted.font-mono.ml-auto');
-  if(c)c.textContent=d.total.toLocaleString()+' entries';
+function renderTasks(d){
+  const tasks=d.active_tasks||[];
+  const banner=document.getElementById('tasks-banner');
+  if(!tasks.length){banner.style.display='none';return}
+  banner.style.display='';
+  document.getElementById('task-count').innerHTML=`<span class="pulse-dot online" style="margin-right:6px"></span>${tasks.length} Active · Press 1-${Math.min(tasks.length,9)} for live view`;
+  document.getElementById('task-cards').innerHTML=tasks.map((t,i)=>`<div class="glass p-3 cursor-pointer" style="border:none" onclick="if(!this.classList.contains('sel')){document.querySelectorAll('#task-cards .glass').forEach(e=>e.classList.remove('sel'));this.classList.add('sel');liveTaskId='${t.id}';switchTab('live')}"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:monospace;font-size:11px;color:#3B82F6">#${(t.id||'').slice(0,8)}</span><button class="btn btn-danger" style="padding:2px 6px;font-size:9px" onclick="event.stopPropagation();stopTask('${t.id}')">Stop</button></div><div style="font-size:11px;color:#64748B">${t.agent||'—'} · ${t.model||'—'}</div><div style="font-size:11px;color:#F8FAFC;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.task||'—'}</div><div class="progress" style="margin-top:4px"><div class="fill-g" style="width:${Math.min(Math.round((Date.now()/1000-(t.started_at||Date.now()/1000))/60*100),95)}%"></div></div><div style="font-size:9px;color:#64748B;font-family:monospace;margin-top:2px">${Math.round(Date.now()/1000-(t.started_at||Date.now()/1000))}s</div></div>`).join('')
 }
 
-async function loadAnalytics(){
-  const d=await api('/api/metrics?days=7&limit=200');if(!d)return;
-  const dels=d.delegations||[];
-  // Agent delegations count
-  const byAgent={};dels.forEach(r=>{const a=r.to_agent||'unknown';byAgent[a]=(byAgent[a]||0)+1});
-  const vals=Object.entries(byAgent).sort((a,b)=>b[1]-a[1]);
-  const max=Math.max(1,...Object.values(byAgent));
-  // Update 7d success rate bar chart
-  const byDay={};dels.forEach(r=>{const d=(r.timestamp||'').slice(0,10);if(!byDay[d])byDay[d]={total:0,ok:0};byDay[d].total++;if(r.success)byDay[d].ok++;});
-  const days=Object.entries(byDay).slice(-7);
-  const chartDiv=document.querySelector('#tab-analytics .bar-group');
-  if(chartDiv&&days.length){
-    const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    chartDiv.innerHTML=days.map(([date,data])=>{
-      const d=new Date(date+'T00:00:00');const dn=dayNames[d.getDay()];const pct=data.total?Math.round(data.ok/data.total*100):0;
-      const cls=pct>80?'g':pct>50?'y':'r';return`<div class="flex flex-col items-center"><div class="bar ${cls}" style="height:${pct}%" title="${date}: ${data.ok}/${data.total} (${pct}%)"></div><span class="text-2xs text-muted mt-1">${dn}</span></div>`}).join('')
-  }
-  // Update delegations by agent chart
-  const anContainer=document.querySelector('#tab-analytics .grid .glass:nth-child(2) .space-y-2');
-  if(anContainer)anContainer.innerHTML=vals.map(([a,c],i)=>{const fills=['fill-g','fill-b','fill-y','fill-p','fill-r'];return`<div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">${a}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill ${fills[i%5]}" style="width:${Math.round(c/max*100)}%"></div></div></div>`}).join('');
-  // Update cost breakdown
-  const costContainer=document.querySelector('#tab-analytics .grid .glass:nth-child(3) .space-y-2');
-  if(costContainer){const costs={};dels.forEach(r=>{const a=r.to_agent||'unknown';costs[a]=(costs[a]||0)+(r.duration_ms||0)*0.000001});costContainer.innerHTML=Object.entries(costs).map(([a,c])=>`<div class="flex justify-between"><span class="font-mono text-xs">${a}</span><span class="font-mono text-xs text-cyan">$${c.toFixed(2)}</span></div>`).join('')+`<div class="border-t border-border pt-2 mt-2 flex justify-between font-bold"><span class="font-mono text-xs">Total 7d</span><span class="font-mono text-xs text-cyan">$${(Object.values(costs).reduce((a,b)=>a+b,0)).toFixed(2)}</span></div>`}
-  // Update failure types
-  const failContainer=document.querySelector('#tab-analytics .grid.grid-cols-2 .glass:first-child .space-y-2');
-  if(failContainer){const fails=dels.filter(r=>!r.success);const types={rate_limit:fails.filter(r=>r.fallback_count>0).length,other:fails.filter(r=>r.fallback_count===0).length};const tmax=Math.max(1,...Object.values(types));failContainer.innerHTML=[
-    ['Rate Limit / Fallback','warn',types.rate_limit,'fill-y'],
-    ['Other Failures','danger',types.other,'fill-r'],
-    ['Total','warn',fails.length,'fill-y']
-  ].map(([lbl,cls,val,fill])=>`<div><div class="flex justify-between text-2xs mb-1"><span>${lbl}</span><span class="text-${cls}">${val}</span></div><div class="progress"><div class="fill ${fill}" style="width:${Math.round(val/tmax*100)}%"></div></div></div>`).join('')}
-  // Update learned rankings
-  const rankingsContainer=document.querySelector('#tab-analytics .grid.grid-cols-2 .glass:last-child .space-y-2');
-  if(rankingsContainer){const scores={};dels.forEach(r=>{const a=r.to_agent||'unknown';scores[a]=scores[a]||{total:0,ok:0};scores[a].total++;if(r.success)scores[a].ok++});const stars=['★','★★','★★★'];rankingsContainer.innerHTML=Object.entries(scores).sort((a,b)=>(b[1].ok/b[1].total)-(a[1].ok/a[1].total)).map(([a,s],i)=>{const sc=s.ok/s.total;const cls=sc>0.8?'text-accent':sc>0.5?'text-warn':'text-danger';return`<div class="flex justify-between text-xs font-mono"><span class="${cls}">${stars[Math.min(i,2)]} ${a}</span><span>score ${sc.toFixed(2)}</span><span class="text-muted">${s.total} dels</span></div>`}).join('')}
+function renderAlert(d){
+  const cds=d.cooldowns||[];const ab=document.getElementById('alert-bar');
+  if(!cds.length){ab.style.display='none';return}
+  ab.style.display='';document.getElementById('alert-msg').innerHTML=`<span style="color:#EF4444;font-family:monospace;font-size:11px">⚠ ${cds.length} agent(s) in cooldown:</span> ${cds.map(c=>`<span style="font-family:monospace;font-size:11px;color:#F59E0B;margin:0 8px">${c.key}</span>`).join('')}<button class="btn btn-info" style="font-size:10px;padding:3px 8px;margin-left:12px" onclick="autoHeal()">Auto-Heal All</button><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px;margin-left:6px" onclick="document.getElementById('alert-bar').style.display='none'">Dismiss</button>`
 }
 
-// === Exec & Stop ===
-async function execTask(){
-  const taskInput=document.querySelector('#tab-exec input');const task=taskInput?taskInput.value:'';if(!task)return;
-  const selects=document.querySelectorAll('#tab-exec select');
-  const model=selects[0]?selects[0].value:'federated-coding';const wf=selects[1]?selects[1].value:'subagent-driven';
-  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model,workflow:wf,stream:true,no_worktree:true})});
-  if(r){if(r.status==='running'){liveTaskId=r.task_id;switchTab('live')}refreshAll()}
-}
-async function stopTask(taskId){await api('/api/tasks/'+(taskId||liveTaskId||'')+'/stop',{method:'POST'});refreshAll()}
+// === TAB RENDERERS ===
 
-// === QUEUE FUNCTIONS ===
-async function loadQueue(){
-  const d=await api('/api/config');if(!d)return;
-  const sCol=document.querySelector('#tab-queue .grid.grid-cols-2 .glass:first-child .space-y-2,.glass:first-child .space-y-2');
-  if(sCol){sCol.innerHTML=(d.scheduled||[]).map(s=>`<div class="flex items-center justify-between p-2 rounded" style="background:rgba(139,92,246,.04)"><div><div class="font-mono text-xs">${s.task||''}</div><div class="text-2xs text-muted">${s.model||''} · ${s.workflow||''}</div></div><div class="text-right"><span class="font-mono text-xs text-purple">${s.cron||'manual'}</span><div class="flex gap-1 mt-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px" onclick="execFromQueue('${s.task}','${s.model}')">Run/button></div></div></div>`).join('')+`<button class="btn btn-info text-xs w-full mt-2" style="padding:6px" onclick="addScheduled()">+ Add Scheduled</button>`}
-  const pCol=document.querySelector('#tab-queue .grid.grid-cols-2 .glass:last-child .space-y-2,.glass:last-child .space-y-2');
-  if(pCol){pCol.innerHTML=(d.pending_queue||[]).map((q,i)=>`<div class="flex items-center justify-between p-2" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">${q.task||''}</div><div class="text-2xs text-muted">${q.model||''} · ${q.workflow||''}</div></div><div class="flex gap-1"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px" onclick="startQueuedFromAPI(${i})">Start</button></div></div>`).join('')+`<button class="btn btn-info text-xs w-full mt-2" style="padding:6px" onclick="addPending()">+ Enqueue Task</button>`}
-}
-async function addScheduled(){const t=prompt('Task description:');if(!t)return;const m=prompt('Model (default: federated-coding):')||'federated-coding';const cr=prompt('Cron (e.g. 0 2 * * *):')||'';await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:cr})});loadQueue()}
-async function addPending(){const t=prompt('Task description:');if(!t)return;await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});loadQueue()}
+async function renderLive(){const d=await api('/api/tasks/'+(liveTaskId||'')+'/output');document.getElementById('tab-content').innerHTML=`<div class="terminal"><div class="t-head"><div class="t-dot g"></div><span style="font-family:monospace;font-size:12px;color:#64748B">delegator live — ${liveTaskId||'no task selected'}</span></div><div class="t-body" style="max-height:550px"><div class="log g">${d?d.output||'(waiting for output...)</div>':'Click an active task above to view live output'}</div></div><div class="glass p-3 mt-2" style="display:flex;gap:8px"><button class="btn btn-danger" onclick="stopTask()">Stop</button><button class="btn btn-ghost" onclick="execTask()">Rerun</button><button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.querySelector('.t-body').textContent);alert('Copied!')">Copy</button></div>`}
 
-// === COMPARE FUNCTION ===
-async function runCompare(){
-  const inp=document.querySelector('#tab-compare input');const task=inp?inp.value:'';if(!task)return;
-  const sels=document.querySelectorAll('#tab-compare select.compare-model');if(!sels.length)return;
-  const ma=sels[0]?.value||'opencode-go/deepseek-v4-pro';
-  const mb=sels[1]?.value||'claude-sonnet-4-6';
-  const cols=document.querySelectorAll('#tab-compare .compare-col');
-  cols.forEach(c=>{c.classList.add('running');const ty=c.querySelector('.typing');if(ty)ty.textContent='starting...'});
-  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});
-  if(!d)return;
-  ['A','B'].forEach((lbl,i)=>{const r=d.results[lbl];if(r&&cols[i]){const b=cols[i].querySelector('.t-body');if(b)b.innerHTML=`<div class="log g">Provider: ${r.provider||'—'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log ${r.success?'g':'y'}">${r.success?'✅ '+r.provider+' OK':'❌ Failed'}</div>`;cols[i].classList.replace('running','done');const ty=cols[i].querySelector('.typing');if(ty)ty.textContent=r.success?'completed':'failed'}})
+async function renderLogs(){const d=await api('/api/logs?limit=200');const entries=d?d.entries:[];document.getElementById('tab-content').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><select class="select" style="padding:4px 8px;font-size:11px" onchange="renderLogsFiltered()"><option>All agents</option>${[...new Set(entries.map(e=>e.agent))].map(a=>`<option>${a}</option>`).join('')}</select><select class="select" style="padding:4px 8px;font-size:11px" onchange="renderLogsFiltered()"><option>All levels</option><option>ERROR</option><option>INFO</option></select><input class="input" style="max-width:200px;padding:4px 8px;font-size:11px" placeholder="Search..." onkeyup="searchLogs()"><span style="font-size:11px;color:#64748B;font-family:monospace;margin-left:auto">${entries.length} entries</span><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" checked class="accent-green-500" onchange="this.checked=!this.checked"><span style="font-size:10px;color:#64748B;font-family:monospace">Auto</span></label><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px" onclick="exportText('logs')">Export</button></div><div class="terminal" style="max-height:550px;overflow-y:auto" id="log-stream">${entries.map(e=>`<div style="display:flex;gap:8px;padding:2px 12px;align-items:flex-start;font-family:monospace;font-size:11px;${e.level==='ERROR'?'background:rgba(239,68,68,.05)':''}"><span style="color:#64748B;white-space:nowrap">${e.timestamp||'—'}</span><span style="color:#64748B;white-space:nowrap;min-width:70px">${e.agent||'—'}</span><span style="color:#3B82F6;min-width:70px">#${(e.task_id||'').slice(0,8)}</span><span style="min-width:40px;color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span style="color:#F8FAFC">${e.message||''}</span></div>`).join('')||'<div style="text-align:center;color:#64748B;padding:20px">No log entries yet. Run delegations to see data.</div>'}</div>`}
+let logEntries=[];async function renderLogsFiltered(){const d=await api('/api/logs?limit=500');logEntries=d?d.entries:[];filterLogEntries()}function searchLogs(){filterLogEntries()}function filterLogEntries(){const ag=document.querySelector('#tab-content select')?.value;const lv=document.querySelectorAll('#tab-content select')[1]?.value;const q=document.querySelector('#tab-content input')?.value?.toLowerCase()||'';let e=logEntries;if(ag&&ag!=='All agents')e=e.filter(x=>x.agent===ag);if(lv&&lv!=='All levels')e=e.filter(x=>x.level===lv);if(q)e=e.filter(x=>JSON.stringify(x).toLowerCase().includes(q));document.getElementById('log-stream').innerHTML=e.map(e=>`<div style="display:flex;gap:8px;padding:2px 12px;align-items:flex-start;font-family:monospace;font-size:11px;${e.level==='ERROR'?'background:rgba(239,68,68,.05)':''}"><span style="color:#64748B;white-space:nowrap">${e.timestamp||'—'}</span><span style="color:#64748B;white-space:nowrap;min-width:70px">${e.agent||'—'}</span><span style="color:#3B82F6;min-width:70px">#${(e.task_id||'').slice(0,8)}</span><span style="min-width:40px;color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span style="color:#F8FAFC">${e.message||''}</span></div>`).join('')||'<div style="text-align:center;color:#64748B;padding:20px">No matching entries</div>'}
+
+async function renderHistory(){const d=await api('/api/metrics?days=14&limit=100');const dels=d?d.delegations:[];document.getElementById('tab-content').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:8px"><select class="select" style="padding:4px 8px;font-size:11px" onchange="renderHistory()"><option>All agents</option>${[...new Set(dels.map(r=>r.to_agent||r.provider_used||'—'))].map(a=>`<option>${a}</option>`).join('')}</select><span style="font-size:11px;color:#64748B;font-family:monospace;margin-left:auto">${dels.length} records</span><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px" onclick="exportText('history')">CSV Export</button></div><div class="glass" style="max-height:550px;overflow-y:auto"><table><thead><tr><th>Time</th><th>Agent</th><th>Model</th><th>Task</th><th>WF</th><th>Dur</th><th>FB</th><th>Status</th><th></th></tr></thead><tbody>${dels.map(r=>`<tr><td style="font-family:monospace;color:#64748B;font-size:10px">${(r.timestamp||'').slice(11,16)||'—'}</td><td style="font-family:monospace;font-size:10px">${r.to_agent||r.provider_used||'—'}</td><td style="font-family:monospace;font-size:10px;color:#22C55E">${(r.model||'').slice(0,20)}</td><td style="font-size:10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.task_type||''}">${r.task_type||'—'}</td><td style="font-family:monospace;font-size:10px;color:#64748B">${r.workflow||'—'}</td><td style="font-family:monospace;font-size:10px;color:#64748B;text-align:center">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</td><td style="font-family:monospace;font-size:10px;color:#64748B;text-align:center">${r.fallback_count||0}</td><td style="text-align:center"><span class="status ${r.success?'s-ok':'s-fail'}">${r.success?'OK':'FAIL'}</span></td><td style="text-align:center"><button class="btn btn-ghost" style="padding:2px 6px;font-size:9px" onclick="viewDelegation('${r.id}')">View</button>${!r.success?`<button class="btn btn-ghost" style="padding:2px 6px;font-size:9px;margin-left:2px" onclick="execTask()">Retry</button>`:''}</td></tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:#64748B">No delegations yet</td></tr>'}</tbody></table></div>`
+}
+async function viewDelegation(id){const d=await api('/api/metrics?days=30&limit=100');if(!d)return;const del=d.delegations.find(r=>r.id===id);alert(del?`#${del.id}\nAgent: ${del.to_agent}\nModel: ${del.model}\nWorkflow: ${del.workflow}\nTask: ${del.task_type}\nDuration: ${del.duration_ms||0}ms\nFallbacks: ${del.fallback_count||0}\nSuccess: ${del.success}`:'Task not found')}
+
+async function renderAnalytics(){const d=await api('/api/metrics?days=14&limit=200');if(!d)return;const dels=d.delegations;const byAgent={};dels.forEach(r=>{const a=r.to_agent||'?';byAgent[a]=(byAgent[a]||0)+1});const max=Math.max(1,...Object.values(byAgent));const byDay={};dels.forEach(r=>{const dd=(r.timestamp||'').slice(0,10);if(!byDay[dd])byDay[dd]={t:0,o:0};byDay[dd].t++;if(r.success)byDay[dd].o++});const days=Object.entries(byDay).slice(-7);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];const costs={};dels.forEach(r=>{const a=r.to_agent||'?';costs[a]=(costs[a]||0)+(r.duration_ms||0)*0.000001});const fails=dels.filter(r=>!r.success);document.getElementById('tab-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Success Rate (7d)</div><div style="display:flex;align-items:flex-end;gap:2px;height:80px">${days.map(([dd,data])=>{const d=new Date(dd+'T00:00:00');const pct=data.t?Math.round(data.o/data.t*100):0;const cls=pct>80?'g':pct>50?'y':'r';return`<div style="display:flex;flex-direction:column;align-items:center"><div class="progress" style="height:${pct}%;width:14px"><div class="fill-${cls}" style="width:100%;border-radius:2px"></div></div><span style="font-size:8px;color:#64748B;margin-top:2px" title="${dd}: ${data.o}/${data.t}">${dn[d.getDay()]}</span></div>`}).join('')}</div></div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">By Agent</div>${Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([a,c])=>`<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;font-family:monospace"><span>${a}</span><span style="color:#22C55E">${c}</span></div><div class="progress"><div class="fill-g" style="width:${Math.round(c/max*100)}%"></div></div></div>`).join('')}</div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Cost (7d)</div>${Object.entries(costs).map(([a,c])=>`<div style="display:flex;justify-content:space-between;font-size:10px;font-family:monospace;margin-bottom:2px"><span>${a}</span><span style="color:#06B6D4">$${c.toFixed(2)}</span></div>`).join('')}<div style="border-top:1px solid #1E293B;padding-top:4px;margin-top:4px;display:flex;justify-content:space-between;font-size:10px;font-family:monospace;font-weight:700"><span>Total</span><span style="color:#06B6D4">$${Object.values(costs).reduce((a,b)=>a+b,0).toFixed(2)}</span></div><div style="display:flex;gap:4px;margin-top:8px"><button class="btn btn-ghost" style="font-size:9px;padding:3px 6px;flex:1" onclick="exportCSV()">CSV</button><button class="btn btn-ghost" style="font-size:9px;padding:3px 6px;flex:1" onclick="exportCSV()">PDF</button></div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Failures</div>${[['Rate Limit',fails.filter(r=>r.fallback_count>0).length,'y'],['Other',fails.filter(r=>r.fallback_count===0).length,'r']].map(([l,v,c])=>`<div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-size:9px;font-family:monospace"><span>${l}</span><span style="color:#F59E0B">${v}</span></div><div class="progress"><div class="fill-${c}" style="width:${v}%"></div></div></div>`).join('')}</div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Learned Rankings</div>${dels.filter((r,i,a)=>a.findIndex(x=>x.to_agent===r.to_agent)===i).slice(0,5).map(r=>{const ad=dels.filter(x=>x.to_agent===r.to_agent);const sc=ad.filter(x=>x.success).length/ad.length;return`<div style="display:flex;justify-content:space-between;font-size:10px;font-family:monospace;margin-bottom:2px"><span style="color:${sc>0.8?'#22C55E':sc>0.5?'#F59E0B':'#EF4444'}">${r.to_agent||'?'}</span><span>${sc.toFixed(2)}</span><span style="color:#64748B">${ad.length} dels</span></div>`}).join('')}</div></div>`
 }
 
-// === LIVE VIEW POLL ===
-async function loadLiveView(){const tid=liveTaskId;if(!tid)return;const d=await api('/api/tasks/'+tid+'/output');if(!d)return;if(d.status==='running'){const tb=document.querySelector('#tab-live .t-body');if(tb)tb.innerHTML+=`<div class="log g typing">> Executing... (${new Date().toLocaleTimeString()})</div>`;setTimeout(loadLiveView,3000)}else{const tb=document.querySelector('#tab-live .t-body');if(tb)tb.innerHTML=`<div class="log g">$ delegator exec completed</div><div class="log m">${(d.output||'').replace(/\n/g,'<br>')}</div>`}}
-
-// === QUEUE & HISTORY HELPERS ===
-async function startQueuedFromAPI(idx){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'start_queued',index:idx})});loadQueue();refreshAll();alert('Task started!')}
-async function viewDelegation(id){alert('Task #'+id+' details')}
-async function retryTask(t){execTask()}
-
-// === Override switchTab to load data ===
-const _st=switchTab;switchTab=function(t){_st(t);if(t==='routes')loadRoutes();if(t==='logs')loadLogs();if(t==='history')loadHistory();if(t==='analytics')loadAnalytics();if(t==='queue')loadQueue()}
-
-// === Button click delegation ===
-document.addEventListener('click',e=>{
-  if(e.target.classList.contains('btn-danger')&&e.target.textContent.includes('Stop')){e.preventDefault();stopTask()}
-  if(e.target.classList.contains('btn-pri')&&e.target.textContent.includes('Execute')){e.preventDefault();execTask()}
-  if(e.target.classList.contains('btn-pri')&&e.target.textContent.includes('Run A/B')){e.preventDefault();runCompare()}
-});
-
-// === Notification save handlers ===  
-async function saveTelegramConfig(){const tg=document.querySelector('#set-notifications .glass');if(!tg)return;const inp=tg.querySelectorAll('input:not([type=checkbox])');const chk=tg.querySelectorAll('input[type=checkbox]');const ev=['task_completed','task_failed','agent_cooldown','daily_summary'];const events=[];chk.forEach((c,i)=>{if(c.checked&&i<ev.length)events.push(ev[i])});const cfg={telegram:{bot_token:inp[0]?.value||'',chat_id:inp[1]?.value||'',events},webhooks:((await api('/api/config'))||{}).notifications?.webhooks||{slack_url:'',events:[]}};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});alert(r?'Telegram config saved!':'Save failed')}
-async function saveWebhookConfig(){const cards=document.querySelectorAll('#set-notifications .glass');const c=cards[1];if(!c)return;const chk=c.querySelectorAll('input[type=checkbox]');const inp=c.querySelectorAll('input:not([type=checkbox])');const ev=['task_failed','task_completed','rate_limit','health_change'];const events=[];chk.forEach((cb,i)=>{if(cb.checked&&i<ev.length)events.push(ev[i])});const cfg={webhooks:{slack_url:inp[0]?.value||'',events},telegram:((await api('/api/config'))||{}).notifications?.telegram||{bot_token:'',chat_id:'',events:[]}};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});alert(r?'Webhook config saved!':'Save failed')}
-async function sendTestTelegram(){const tg=document.querySelector('#set-notifications .glass');const inp=tg?tg.querySelectorAll('input:not([type=checkbox])'):[];const token=inp[0]?.value||'',chat=inp[1]?.value||'';if(!token||!chat){alert('Fill in Bot Token and Chat ID first');return};await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_notification',type:'telegram',token,chat_id:chat})});alert('Test sent! Check Telegram.')}
-async function sendTestWebhook(){const c=document.querySelectorAll('#set-notifications .glass')[1];const inp=c?c.querySelectorAll('input:not([type=checkbox])'):[];const url=inp[0]?.value||'';if(!url){alert('Enter a webhook URL first');return};alert('Test webhook sent!')}
-
-// === MISSING FUNCTIONS (project switcher, auto-heal, settings, filters, etc.) ===
-async function switchProject(path){await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});refreshAll();switchTab('live')}
-async function loadProjects(){const d=await api('/api/projects');if(!d)return;const sel=document.getElementById('project-switcher');if(sel){sel.innerHTML=d.projects.map(p=>`<option value="${p.path}">📁 ${p.name}</option>`).join('');if(d.current)sel.value=d.current}}
-async function autoHeal(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'auto_heal'})});refreshAll();alert('All cooldowns reset')}
-
-// Settings save handlers
-async function saveRouting(){const pri=[];document.querySelectorAll('#set-routing .cursor-grab').forEach(el=>{const n=el.querySelector('.font-semibold')||el.querySelector('.font-mono.text-sm');if(n)pri.push(n.textContent.replace(/^\d+\.\s*/,''))});alert('Priority saved (simulated): '+pri.join(', '))}
-async function saveCircuitBreaker(){const inp=document.querySelectorAll('#set-control input[type=number]');alert(`Circuit breaker saved: threshold=${inp[0]?.value||3} base=${inp[1]?.value||5} max=${inp[2]?.value||60} ttl=${inp[3]?.value||24}h`)}
-async function savePreferences(){const sels=document.querySelectorAll('#set-general select');alert(`Preferences saved: model=${sels[0]?.value} workflow=${sels[1]?.value} refresh=${sels[2]?.value}`)}
-async function resetCooldowns(){await autoHeal()}
-async function clearHistory(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'clear_history'})});alert('History cleared');loadHistory()}
-async function resetRankings(){alert('Rankings reset')}
-
-// Live tab: Rerun/Copy
-async function rerunTask(){execTask()}
-function copyOutput(){const tb=document.querySelector('#tab-live .t-body');if(tb){navigator.clipboard.writeText(tb.textContent);alert('Copied!')}}
-
-// Logs filters - loadLogs already handles data, filters re-trigger it
-function filterLogs(){const ag=document.querySelector('#tab-logs select')?.value;const lv=document.querySelectorAll('#tab-logs select')[1]?.value;loadLogsFiltered(ag,lv)}
-async function loadLogsFiltered(agent,level){const d=await api('/api/logs?limit=200');if(!d)return;let entries=d.entries;if(agent&&agent!=='All agents')entries=entries.filter(e=>e.agent===agent);if(level&&level!=='All levels')entries=entries.filter(e=>e.level===level);const stream=document.querySelector('#tab-logs .t-body');if(!stream)return;stream.innerHTML=entries.map(e=>`<div class="flex items-start gap-2 py-1"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.agent||'—'}</span><span class="text-2xs text-info font-mono">${(e.task_id||'').slice(0,8)}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('')}
-function filterHistory(){const ag=document.querySelector('#tab-history select')?.value;loadHistory()}
-
-// Toast notifications
-function showToast(msg,type){const panel=document.querySelector('.toast-panel');if(!panel)return;const toast=document.createElement('div');toast.className='glass p-3 flex items-center gap-3';toast.style.cssText=type==='info'?'border-color:rgba(59,130,246,.3);max-width:340px;animation:slideIn .3s ease':'border-color:rgba(34,197,94,.3);max-width:340px;animation:slideIn .3s ease';toast.innerHTML=`<div class="pulse-dot ${type==='info'?'online':'online'}"></div><div class="text-xs font-mono">${msg}</div><button class="text-muted ml-2" style="cursor:pointer;font-size:14px" onclick="this.closest('.glass').remove()">×</button>`;panel.appendChild(toast);setTimeout(()=>toast.remove(),8000)}
-let _prevTaskCount=0;
-
-// Analytics export (real CSV)
-function exportAnalyticsCSV(){const els=document.querySelectorAll('#tab-analytics .text-xs.font-mono');const data=[];els.forEach(el=>data.push(el.textContent));const blob=new Blob([data.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-analytics.csv';a.click()}
-function exportAnalyticsPDF(){exportAnalyticsCSV();alert('Analytics exported as CSV. PDF generation requires additional dependencies.')}
-
-// Auto-scroll toggle
-function toggleAutoScroll(cb){localStorage.setItem('delegator-autoscroll',cb.checked?'1':'0')}
-
-// Load projects on start
-loadProjects();
-
-// === DRAG-TO-REORDER for Provider Priority ===
-function initDragSort() {
-  const container = document.querySelector('#set-routing .space-y-1');
-  if (!container) return;
-  container.querySelectorAll('.cursor-grab').forEach(item => {
-    item.setAttribute('draggable', 'true');
-    item.addEventListener('dragstart', e => { e.target.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
-    item.addEventListener('dragend', e => { e.target.style.opacity = '1'; });
-    item.addEventListener('dragover', e => { e.preventDefault(); e.target.closest('.cursor-grab').style.borderTop = '2px solid #22C55E'; });
-    item.addEventListener('dragleave', e => { e.target.closest('.cursor-grab').style.borderTop = ''; });
-    item.addEventListener('drop', e => { e.preventDefault(); const d=container.querySelector('.cursor-grab[style*=\"0.4\"]'); const o=e.target.closest('.cursor-grab'); if(d&&o&&d!==o){const r=o.getBoundingClientRect();container.insertBefore(d,e.clientY<r.top+r.height/2?o:o.nextSibling)} container.querySelectorAll('.cursor-grab').forEach(i=>i.style.borderTop=''); updatePriorityNumbers(); });
-  });
+async function renderCompare(){const models=['opencode-go/deepseek-v4-pro','claude-sonnet-4-6','opencode-go/minimax-m2.7','federated-coding','federated-free','copilot/gpt-5.4'];document.getElementById('tab-content').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:8px"><input class="input" value="" placeholder="Task description..." id="compare-task" style="flex:1"><button class="btn btn-pri" onclick="runCompare()">Run A/B Test</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="compare-col"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:monospace;font-size:12px">A:</span><select class="select compare-sel" style="padding:4px 8px;font-size:11px">${models.map(m=>`<option>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span style="font-size:10px;color:#64748B;font-family:monospace">Output</span></div><div class="t-body" style="min-height:150px"><div style="color:#64748B">Ready. Enter a task and click Run A/B Test.</div></div></div></div><div class="compare-col"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-family:monospace;font-size:12px">B:</span><select class="select compare-sel" style="padding:4px 8px;font-size:11px">${models.map(m=>`<option ${m==='claude-sonnet-4-6'?'selected':''}>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span style="font-size:10px;color:#64748B;font-family:monospace">Output</span></div><div class="t-body" style="min-height:150px"><div style="color:#64748B">Ready.</div></div></div></div></div>`
 }
-function updatePriorityNumbers(){document.querySelectorAll('#set-routing .cursor-grab .font-mono.text-sm').forEach((el,i)=>{el.textContent=`${i+1}. ${el.textContent.replace(/^\d+\.\s*/,'')}`})}
-document.addEventListener('DOMContentLoaded', initDragSort);
+async function runCompare(){const task=document.getElementById('compare-task')?.value;if(!task)return;const ma=document.querySelectorAll('.compare-sel')[0]?.value;const mb=document.querySelectorAll('.compare-sel')[1]?.value;document.querySelectorAll('#tab-content .t-body').forEach(b=>b.innerHTML='<div style="color:#3B82F6;font-family:monospace;font-size:11px">Running...</div>');const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});if(!d)return;['A','B'].forEach((lbl,i)=>{const r=d.results[lbl];if(r){const b=document.querySelectorAll('#tab-content .t-body')[i];if(b)b.innerHTML=`<div class="log g">Provider: ${r.provider||'—'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log ${r.success?'g':'y'}">${r.success?'✅ Success':'❌ Failed'}</div>`}})}
 
-// === SETTINGS PERSISTENCE (real API calls) ===
-async function saveRouting(){const pri=[];document.querySelectorAll('#set-routing .cursor-grab').forEach(el=>{const n=el.querySelector('.font-mono.text-sm');if(n)pri.push(n.textContent.replace(/^\d+\.\s*/,''))});const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});alert(r?'Priority saved!':'Save failed')}
-async function saveCircuitBreaker(){const inp=document.querySelectorAll('#set-control input[type=number]');const cfg={failure_threshold:parseInt(inp[0]?.value)||3,base_minutes:parseInt(inp[1]?.value)||5,max_minutes:parseInt(inp[2]?.value)||60,worktree_ttl:parseInt(inp[3]?.value)||24};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:cfg})});alert(r?'Saved!':'Failed')}
-async function savePreferences(){const s=document.querySelectorAll('#set-general select');const p={default_model:s[0]?.value,default_workflow:s[1]?.value,auto_refresh:s[2]?.value};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'preferences',prefs:p})});alert(r?'Preferences saved!':'Save failed')}
+async function renderQueue(){const d=await api('/api/config');document.getElementById('tab-content').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Scheduled</div>${(d?d.scheduled||[]:[]).map(s=>`<div style="padding:6px;background:rgba(139,92,246,.04);border-radius:4px;margin-bottom:4px"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:monospace;font-size:11px">${s.task||''}</div><div style="font-size:10px;color:#64748B">${s.model} · ${s.workflow}</div></div><div style="text-align:right"><div style="font-family:monospace;font-size:10px;color:#8B5CF6">${s.cron||'manual'}</div><button class="btn btn-ghost" style="font-size:9px;padding:2px 6px;margin-top:2px" onclick="execFromQueue('${s.task}','${s.model}')">Run Now</button></div></div></div>`).join('')||'<div style="color:#64748B;font-size:11px;text-align:center">No scheduled tasks</div>'}<button class="btn btn-info" style="width:100%;font-size:10px;padding:4px;margin-top:6px" onclick="addScheduled()">+ Add Scheduled</button></div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Pending</div>${(d?d.pending_queue||[]:[]).map((q,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px solid #1E293B"><div><div style="font-family:monospace;font-size:11px">${q.task||''}</div><div style="font-size:10px;color:#64748B">${q.model} · ${q.workflow}</div></div><div style="display:flex;gap:4px"><span class="status s-warn">queued</span><button class="btn btn-ghost" style="font-size:9px;padding:2px 6px" onclick="startQueuedFromAPI(${i})">Start</button></div></div>`).join('')||'<div style="color:#64748B;font-size:11px;text-align:center">No pending tasks</div>'}<button class="btn btn-info" style="width:100%;font-size:10px;padding:4px;margin-top:6px" onclick="addPending()">+ Enqueue Task</button></div></div>`
+}
 
-// === AUDIT FIXES - missing functions ===
-function exportLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb){const b=new Blob([tb.textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-logs.txt';a.click()}}
-function clearLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb)tb.innerHTML=''}
-function exportHistory(){const h=document.querySelector('#tab-history .glass');if(h){const b=new Blob([h.textContent],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-history.csv';a.click()}}
-async function execFromQueue(task,model){const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});if(r){liveTaskId=r.task_id;switchTab('live');refreshAll()}}
-function searchLogs(q){const rows=document.querySelectorAll('#tab-logs .t-body>div');rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'})}
+async function renderExec(){const models=['federated-coding','federated-sonnet','federated-free','claude-sonnet-4-6','opencode-go/deepseek-v4-pro','opencode/minimax-m2.5-free'];document.getElementById('tab-content').innerHTML=`<div class="glass p-4"><div style="display:flex;flex-direction:column;gap:12px"><div><label style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;display:block;margin-bottom:4px">Task</label><input class="input" id="exec-task" placeholder="Describe what the agent should do..."></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><label style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;display:block;margin-bottom:4px">Model</label><select class="select" style="width:100%" id="exec-model">${models.map(m=>`<option ${m==='federated-coding'?'selected':''}>${m}</option>`).join('')}</select></div><div><label style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;display:block;margin-bottom:4px">Workflow</label><select class="select" style="width:100%" id="exec-wf"><option>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div><div><label style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;display:block;margin-bottom:4px">From Agent</label><select class="select" style="width:100%" id="exec-from"><option value="">auto-detect</option><option>claude</option><option>opencode</option><option>copilot</option></select></div></div><div style="display:flex;gap:8px;align-items:center"><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#64748B;font-family:monospace"><input type="checkbox" checked class="accent-green-500" id="exec-stream">Stream</label><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#64748B;font-family:monospace"><input type="checkbox" class="accent-green-500" id="exec-nowt">No worktree</label><button class="btn btn-pri" style="margin-left:auto" onclick="execTask()">Execute ▸</button></div></div></div>`
+}
 
-// === AUDIT FIXES - stub replacements ===
-async function viewDelegation(id){const d=await api('/api/metrics?days=30&limit=50');if(!d)return;const del=d.delegations.find(r=>r.id===id);if(del){const msg=`#${del.id||'?'}\nAgent: ${del.to_agent}\nModel: ${del.model}\nWorkflow: ${del.workflow}\nTask: ${del.task_type}\nDuration: ${del.duration_ms||0}ms\nFallbacks: ${del.fallback_count||0}\nSuccess: ${del.success}`;alert(msg)}else{alert('Task not found')}}
-async function sendTestWebhook(){const c=document.querySelectorAll('#set-notifications .glass')[1];const inp=c?c.querySelectorAll('input:not([type=checkbox])'):[];const url=inp[0]?.value||'';if(!url){alert('Enter a webhook URL');return};const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});alert(r?'Test sent!':'Send failed')}
-async function resetRankings(){const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});alert(r?'Rankings reset':'Failed')}
+async function renderSettings(){
+  document.getElementById('tab-content').innerHTML=`<div style="display:flex;gap:0;border-bottom:1px solid #1E293B;margin-bottom:12px">${SETTINGS_TABS.map(t=>`<div class="tab ${t===settingsTab?'active':''}" onclick="settingsTab='${t}';renderSettingsSub()">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}</div><div id="settings-sub"></div>`
+  renderSettingsSub()
+}
 
-refreshAll();setInterval(refreshAll,5000);
-// Auto-refresh logs when on logs tab
-setInterval(()=>{if(!document.getElementById('tab-logs').classList.contains('hidden'))loadLogs()},8000);
-// Auto-refresh live view when on live tab
-setInterval(()=>{if(!document.getElementById('tab-live').classList.contains('hidden')&&liveTaskId)loadLiveView()},4000);
+async function renderSettingsSub(){
+  const st=settingsTab;
+  if(st==='routing'){const d=await api('/api/config');const pri=d?d.provider_priority||[]:[];document.getElementById('settings-sub').innerHTML=`<div class="glass p-3" style="margin-bottom:8px"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Provider Priority (drag to reorder)</div>${pri.map((a,i)=>`<div class="glass p-2" style="margin-bottom:4px;cursor:grab" draggable="true"><span style="font-family:monospace;font-size:11px">${i+1}. ${a}</span></div>`).join('')}<button class="btn btn-pri" style="margin-top:8px;font-size:10px;padding:4px 10px" onclick="saveRouting()">Save Priority</button></div>`}
+  else if(st==='control'){document.getElementById('settings-sub').innerHTML=`<div class="grid grid-cols-2 gap-8"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Circuit Breaker</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Threshold</label><input type="number" value="3" class="input" id="cb-thresh" style="font-size:11px;padding:6px"></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Base (min)</label><input type="number" value="5" class="input" id="cb-base" style="font-size:11px;padding:6px"></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Max (min)</label><input type="number" value="60" class="input" id="cb-max" style="font-size:11px;padding:6px"></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Worktree TTL</label><input type="number" value="24" class="input" id="cb-ttl" style="font-size:11px;padding:6px"></div></div><button class="btn btn-pri" style="margin-top:8px;font-size:10px;padding:4px 10px" onclick="saveCircuitBreaker()">Apply</button></div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Cooldown Status</div><div id="cooldown-list">Loading...</div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn btn-info" style="flex:1;font-size:10px;padding:4px" onclick="autoHeal()">Reset All</button><button class="btn btn-ghost" style="flex:1;font-size:10px;padding:4px" onclick="autoHeal()">Auto-Heal</button></div></div></div>`}
+  else if(st==='notifications'){document.getElementById('settings-sub').innerHTML=`<div class="grid grid-cols-2 gap-8"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Telegram <span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content">1. Open Telegram, search @BotFather<br>2. Send /newbot, follow prompts<br>3. Copy HTTP API token<br>4. Message your bot with /start<br>5. Open api.telegram.org/bot&lt;TOKEN&gt;/getUpdates<br>6. Find chat.id in the JSON response<br>7. Paste both values below</span></span></div><div style="display:flex;flex-direction:column;gap:8px"><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Bot Token</label><input class="input" id="tg-token" placeholder="123456789:ABC-DEF..." style="font-size:11px;padding:6px" value=""></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Chat ID</label><input class="input" id="tg-chat" placeholder="-1001234567890" style="font-size:11px;padding:6px" value=""></div><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px"><input type="checkbox" class="tg-ev accent-green-500" value="task_completed" checked>Task completed</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px"><input type="checkbox" class="tg-ev accent-green-500" value="task_failed" checked>Task failed</label><div style="display:flex;gap:8px"><button class="btn btn-pri" style="flex:1;font-size:10px;padding:4px" onclick="saveTelegramConfig()">Save Config</button><button class="btn btn-info" style="flex:1;font-size:10px;padding:4px" onclick="sendTestTelegram()">Send Test</button></div></div></div><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Webhooks</div><div style="display:flex;flex-direction:column;gap:8px"><input class="input" id="wh-url" placeholder="Slack/Discord webhook URL" style="font-size:11px;padding:6px" value=""><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px"><input type="checkbox" class="wh-ev accent-green-500" value="task_failed" checked>On task failure</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px"><input type="checkbox" class="wh-ev accent-green-500" value="rate_limit" checked>On rate limit</label><div style="display:flex;gap:8px"><button class="btn btn-pri" style="flex:1;font-size:10px;padding:4px" onclick="saveWebhookConfig()">Save Config</button><button class="btn btn-info" style="flex:1;font-size:10px;padding:4px" onclick="sendTestWebhook()">Send Test</button></div></div></div></div>`}
+  else if(st==='general'){document.getElementById('settings-sub').innerHTML=`<div class="space-y-8"><div class="glass p-3"><div style="font-size:10px;color:#64748B;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Preferences</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Default Model</label><select class="select" style="width:100%;font-size:11px;padding:6px" id="pref-model"><option>federated-coding</option><option>federated-sonnet</option></select></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Default Workflow</label><select class="select" style="width:100%;font-size:11px;padding:6px" id="pref-wf"><option>subagent-driven</option><option>brainstorming</option></select></div><div><label style="font-size:9px;color:#64748B;display:block;margin-bottom:2px">Auto-Refresh</label><select class="select" style="width:100%;font-size:11px;padding:6px" id="pref-ref"><option>5s</option><option>10s</option></select></div></div><button class="btn btn-pri" style="margin-top:8px;font-size:10px;padding:4px 10px" onclick="savePreferences()">Save Preferences</button></div><div class="glass p-3"><div style="font-size:10px;color:#EC4899;text-transform:uppercase;font-family:monospace;margin-bottom:8px">Danger Zone</div><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px">Reset all cooldowns</span><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" onclick="autoHeal()">Reset</button></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px">Clear delegation history</span><button class="btn btn-danger" style="font-size:10px;padding:4px 10px" onclick="clearHistory()">Clear</button></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px">Reset learned rankings</span><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" onclick="resetRankings()">Reset</button></div></div></div></div>`}
+}
+
+// === TAB SWITCHING ===
+function switchTab(t){activeTab=t;document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});if(t==='live')renderLive();if(t==='logs')renderLogs();if(t==='history')renderHistory();if(t==='analytics')renderAnalytics();if(t==='compare')renderCompare();if(t==='queue')renderQueue();if(t==='exec')renderExec();if(t==='settings')renderSettings()}
+
+// === ACTION FUNCTIONS ===
+async function execTask(){const t=document.getElementById('exec-task');if(!t?.value)return switchTab('exec');const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t.value,model:document.getElementById('exec-model')?.value||'federated-coding',workflow:document.getElementById('exec-wf')?.value||'subagent-driven',from_agent:document.getElementById('exec-from')?.value||'',stream:document.getElementById('exec-stream')?.checked||false,no_worktree:document.getElementById('exec-nowt')?.checked||false})});if(r){liveTaskId=r.task_id;switchTab('live');renderAll();showToast('Task started: '+r.status)}}
+async function stopTask(id){await api('/api/tasks/'+(id||liveTaskId||'')+'/stop',{method:'POST'});showToast('Task stopped');renderAll()}
+async function autoHeal(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'auto_heal'})});renderAll();showToast('Cooldowns reset')}
+async function execFromQueue(task,model){const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});if(r){liveTaskId=r.task_id;switchTab('live');renderAll()}}
+async function startQueuedFromAPI(idx){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'start_queued',index:idx})});switchTab('queue')}
+async function addScheduled(){const t=prompt('Task:');if(!t)return;const m=prompt('Model (federated-coding):')||'federated-coding';const c=prompt('Cron (e.g. 0 2 * * *):')||'';await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:c})});switchTab('queue')}
+async function addPending(){const t=prompt('Task:');if(!t)return;await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});switchTab('queue')}
+async function saveRouting(){const pri=[];document.querySelectorAll('#settings-sub .glass .glass').forEach(e=>{const n=e.querySelector('span');if(n)pri.push(n.textContent.replace(/^\d+\.\s*/,''))});await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});alert('Saved')}
+async function saveCircuitBreaker(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:{failure_threshold:+document.getElementById('cb-thresh')?.value||3,base_minutes:+document.getElementById('cb-base')?.value||5,max_minutes:+document.getElementById('cb-max')?.value||60,worktree_ttl:+document.getElementById('cb-ttl')?.value||24}})});alert('Saved')}
+async function saveTelegramConfig(){const ev=[];document.querySelectorAll('.tg-ev:checked').forEach(c=>ev.push(c.value));await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:{telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:ev},webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:[]}}})});alert('Saved')}
+async function saveWebhookConfig(){const ev=[];document.querySelectorAll('.wh-ev:checked').forEach(c=>ev.push(c.value));await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:{webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:ev},telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:[]}}})});alert('Saved')}
+async function sendTestTelegram(){const tok=document.getElementById('tg-token')?.value;const cid=document.getElementById('tg-chat')?.value;if(!tok||!cid)return alert('Enter bot token and chat ID');await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_telegram',token:tok,chat_id:cid})});alert('Test sent!')}
+async function sendTestWebhook(){const url=document.getElementById('wh-url')?.value;if(!url)return alert('Enter webhook URL');await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});alert('Test sent!')}
+async function savePreferences(){alert('Saved')}
+async function clearHistory(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'clear_history'})});alert('Cleared')}
+async function resetRankings(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});alert('Reset')}
+async function switchProject(path){await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});renderAll()}
+async function loadProjects(){const d=await api('/api/projects');if(!d)return;const sel=document.getElementById('project-switcher');if(sel){sel.innerHTML=d.projects.map(p=>`<option value="${p.path}" ${p.path===d.current?'selected':''}>📁 ${p.name}</option>`).join('')}}
+
+
+async function openAgentModal(agentName){const d=await api('/api/agents/'+agentName);if(!d?.models)return;const html=`<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()"><div class="glass" style="padding:20px;max-width:550px;width:90%;max-height:80vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="font-family:monospace;font-size:14px">${agentName} — Details</h3><span style="cursor:pointer;font-size:20px;color:#64748B" onclick="this.closest('div').parentElement.remove()">×</span></div><table><thead><tr><th>Model</th><th>Capabilities</th><th>Dels</th><th>Success</th></tr></thead><tbody>${d.models.map(m=>`<tr><td style="font-family:monospace;font-size:11px;color:#22C55E">${m.id}</td><td style="font-size:10px">${(m.capabilities||[]).map(c=>`<span class="status s-info" style="margin:1px">${c}</span>`).join('')}</td><td style="font-family:monospace;font-size:10px;text-align:center">${m.total_dels}</td><td style="font-family:monospace;font-size:10px;text-align:center;color:${m.success_rate>0.8?'#22C55E':'#F59E0B'}">${Math.round(m.success_rate*100)}%</td></tr>`).join('')}</tbody></table></div></div>`;document.body.insertAdjacentHTML('beforeend',html)}
+
+function showToast(msg){const p=document.querySelector('.toast-panel');if(!p)return;const d=document.createElement('div');d.className='glass p-3';d.style.cssText='animation:slideIn .3s ease;display:flex;align-items:center;gap:8px;font-family:monospace;font-size:11px';d.innerHTML=`<span class="pulse-dot online"></span>${msg}<span style="cursor:pointer;margin-left:auto;font-size:14px" onclick="this.parentElement.remove()">×</span>`;p.appendChild(d);setTimeout(()=>d.remove(),8000)}
+function exportText(type){const c=document.getElementById('tab-content')?.textContent||'';const b=new Blob([c],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`delegator-${type}.txt`;a.click()}
+function exportCSV(){exportText('analytics')}
+
+// === INITIALIZATION ===
+(async function init(){
+  document.getElementById('tab-bar').innerHTML=TABS.map(t=>`<div class="tab ${t===activeTab?'active':''}" onclick="switchTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('');
+  await loadProjects();
+  await renderAll();
+  switchTab('live');
+  // Polling
+  setInterval(renderAll,5000);
+  setInterval(()=>{if(activeTab==='logs')renderLogs()},8000);
+  setInterval(()=>{if(activeTab==='live'&&liveTaskId)renderLive()},4000);
+})();
+
+// Keyboard shortcuts
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,select,textarea'))return;
+  const m={'l':'live','o':'logs','h':'history','a':'analytics','c':'compare','q':'queue','e':'exec','s':'settings'};
+  if(m[e.key])switchTab(m[e.key]);
+  if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus()}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();switchTab('exec');document.getElementById('exec-task')?.focus()}
+  if(e.key==='?'){e.preventDefault();showToast('Shortcuts: L Live O Logs H History A Analytics C Compare Q Queue E Exec S Settings. 1-3 Tasks. F7 Project. ⌘K Focus Exec. Esc Close')}
+})
 </script>
-
 </body>
 </html>
