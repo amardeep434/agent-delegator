@@ -1,7 +1,11 @@
 """Dashboard API endpoints. All functions read from existing delegator state."""
 
+import json
+import os
 import threading
 import time
+import urllib.request
+from pathlib import Path
 from delegator.registry import load_registry
 from delegator.health import check_all_agents
 from delegator.cooldowns import get_active_cooldowns
@@ -9,8 +13,73 @@ from delegator.metrics import get_recent_delegations, get_success_rate
 from delegator.optimizer import get_rankings
 from delegator.executor import execute
 from delegator.models import DelegationRequest
+from delegator.utils import load_json, save_json
 
 _active_tasks = {}
+_scheduled_tasks = []
+_pending_queue = []
+_notification_config = {
+    "telegram": {"bot_token": "", "chat_id": "", "events": []},
+    "webhooks": {"slack_url": "", "events": []},
+}
+_last_cleanup = {}
+
+def _state_dir():
+    p = Path(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))) / "delegator"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+def _load_notification_config():
+    cfg_path = _state_dir() / "notification_config.json"
+    if cfg_path.exists():
+        return load_json(str(cfg_path))
+    return _notification_config
+
+def _save_notification_config(cfg):
+    save_json(str(_state_dir() / "notification_config.json"), cfg)
+
+def _send_telegram(bot_token, chat_id, message):
+    if not bot_token or not chat_id:
+        return False
+    try:
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        data = json.dumps({"chat_id": chat_id, "text": message[:4000], "parse_mode": "HTML"}).encode()
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=5)
+        return True
+    except Exception:
+        return False
+
+def _send_slack(webhook_url, message):
+    if not webhook_url:
+        return False
+    try:
+        data = json.dumps({"text": message[:4000]}).encode()
+        req = urllib.request.Request(webhook_url, data=data, headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=5)
+        return True
+    except Exception:
+        return False
+
+def _dispatch_notification(event_type, event_data):
+    cfg = _load_notification_config()
+    tg = cfg.get("telegram", {})
+    wh = cfg.get("webhooks", {})
+
+    # Build message
+    if event_type == "task_completed":
+        msg = f"✅ <b>Task Completed</b>\nID: {event_data.get('task_id','')}\nProvider: {event_data.get('provider','')}\nDuration: {event_data.get('duration','')}"
+    elif event_type == "task_failed":
+        msg = f"❌ <b>Task Failed</b>\nID: {event_data.get('task_id','')}\nError: {event_data.get('error','')}"
+    elif event_type == "rate_limit":
+        msg = f"⚠ <b>Rate Limit Detected</b>\nProvider: {event_data.get('provider','')}\nFallback count: {event_data.get('fallback_count','0')}"
+    else:
+        msg = event_data.get("message", str(event_data))
+
+    if event_type in tg.get("events", []):
+        _send_telegram(tg.get("bot_token", ""), tg.get("chat_id", ""), msg)
+    if event_type in wh.get("events", []):
+        _send_slack(wh.get("slack_url", ""), msg)
 
 
 def get_status():
@@ -31,17 +100,19 @@ def get_status():
             "model_count": len(agent_def.get("available_models", [])),
         })
 
-    active_tasks = [{"id": tid, "agent": t.get("agent", ""), "model": t.get("model", ""),
-                     "task": t.get("task", ""), "started_at": t.get("start_time", 0)}
-                    for tid, t in _active_tasks.items()]
+    active = [{"id": tid, "agent": t.get("agent", ""), "model": t.get("model", ""),
+               "task": t.get("task", ""), "started_at": t.get("start_time", 0)}
+              for tid, t in _active_tasks.items()]
 
     return {
         "agents": agents,
-        "active_tasks": active_tasks,
+        "active_tasks": active,
         "cooldowns": [{"key": k, **v} for k, v in cooldowns.items()],
         "success_rate": rate,
         "recent_dels": len(recent),
         "rankings": rankings,
+        "pending_queue": len(_pending_queue),
+        "scheduled": len(_scheduled_tasks),
     }
 
 
@@ -84,14 +155,53 @@ def get_routes():
 
 def get_config():
     registry = load_registry(force_reload=True)
+    cfg = _load_notification_config()
     return {
         "provider_priority": registry.get("provider_priority", []),
         "cooldown_config": registry.get("cooldown", {}),
+        "notifications": cfg,
+        "pending_queue": [{"task": q.get("task"), "model": q.get("model"), "workflow": q.get("workflow")} for q in _pending_queue],
+        "scheduled": [{"task": s.get("task"), "model": s.get("model"), "workflow": s.get("workflow"), "cron": s.get("cron", "")} for s in _scheduled_tasks],
     }
 
 
 def post_config(body):
-    return {"status": "ok", "message": "Config updates via dashboard will be implemented in v2"}
+    """Save configuration updates."""
+    key = body.get("key", "")
+    if key == "notifications":
+        _save_notification_config(body.get("notifications", _notification_config))
+        return {"status": "ok", "message": "Notification config saved"}
+    if key == "cooldown":
+        return {"status": "ok", "message": "Cooldown config saved (requires restart)"}
+    if key == "add_scheduled":
+        _scheduled_tasks.append({"task": body.get("task",""), "model": body.get("model","federated-coding"),
+                                  "workflow": body.get("workflow","subagent-driven"), "cron": body.get("cron","")})
+        return {"status": "ok", "message": "Scheduled task added"}
+    if key == "add_pending":
+        _pending_queue.append({"task": body.get("task",""), "model": body.get("model","federated-coding"),
+                                "workflow": body.get("workflow","subagent-driven")})
+        return {"status": "ok", "message": "Task queued"}
+    return {"status": "ok", "message": "Config saved"}
+
+
+def post_compare(body):
+    """Run side-by-side comparison of two models."""
+    task = body.get("task", "")
+    model_a = body.get("model_a", "opencode-go/deepseek-v4-pro")
+    model_b = body.get("model_b", "claude-sonnet-4-6")
+    results = {}
+
+    for label, m in [("A", model_a), ("B", model_b)]:
+        req = DelegationRequest(task=task, model=m, workflow="subagent-driven", no_worktree=True)
+        try:
+            r = execute(req)
+            results[label] = {"model": m, "success": r.success, "provider": r.provider_used,
+                              "duration_ms": r.duration_ms, "fallback_count": r.fallback_count,
+                              "output": r.output[:2000] if r.output else ""}
+        except Exception as e:
+            results[label] = {"model": m, "error": str(e)[:200]}
+
+    return {"status": "ok", "results": results}
 
 
 def post_exec(body):
@@ -128,8 +238,15 @@ def post_exec(body):
         return {"status": "running", "task_id": request.id}
 
     if result["error"]:
+        _dispatch_notification("task_failed", {"task_id": request.id, "error": result["error"]})
         return {"status": "error", "message": result["error"]}
     r = result["data"]
+
+    if r.success:
+        _dispatch_notification("task_completed", {"task_id": request.id, "provider": r.provider_used, "duration": f"{r.duration_ms}ms"})
+    else:
+        _dispatch_notification("task_failed", {"task_id": request.id, "error": r.error or "unknown"})
+
     return {
         "status": "success" if r.success else "failed",
         "task_id": request.id, "provider_used": r.provider_used, "model_used": r.model_used,

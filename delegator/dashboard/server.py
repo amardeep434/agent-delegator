@@ -81,6 +81,9 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/config":
             from delegator.dashboard.api import post_config
             _json_response(self, post_config(_read_body(self)))
+        elif path == "/api/compare":
+            from delegator.dashboard.api import post_compare
+            _json_response(self, post_compare(_read_body(self)))
         elif path.startswith("/api/tasks/") and path.endswith("/stop"):
             task_id = path.split("/")[3] if len(path.split("/")) > 3 else ""
             from delegator.dashboard.api import post_stop_task

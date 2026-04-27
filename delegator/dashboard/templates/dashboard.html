@@ -612,46 +612,134 @@ document.addEventListener('keydown',function(e){if(e.key==='1')selectTask('a3f2'
   </div>
 </div>
 
-<!-- API Polling -->
+<!-- LIVE API POLLING -->
 <script>
-async function refreshData() {
-  try {
-    const res = await fetch('/api/status');
-    const d = await res.json();
-    const agents = d.agents || [];
-    const tasks = d.active_tasks || [];
-    const cds = d.cooldowns || [];
-    
-    // Update agent cards
-    agents.forEach(a => {
-      document.querySelectorAll('.agent-name').forEach(el => {
-        if(el.textContent.trim() === a.name) {
-          const dot = el.parentElement.querySelector('.pulse-dot');
-          dot.className = 'pulse-dot ' + (a.available ? 'online' : 'danger');
-        }
-      });
-    });
-    
-    // Update task count in metrics
-    const taskMetric = document.querySelectorAll('.metric-card')[1];
-    if(taskMetric) taskMetric.querySelector('.font-bold').textContent = tasks.length;
-    
-    // Update cooldown count
-    const cdMetric = document.querySelectorAll('.metric-card')[4];
-    if(cdMetric) cdMetric.querySelector('.font-bold').textContent = cds.length;
-    
-    // Update success rate
-    const rateMetric = document.querySelectorAll('.metric-card')[3];
-    if(rateMetric) rateMetric.querySelector('.font-bold').textContent = Math.round((d.success_rate||0)*100) + '%';
-    
-    // Update total dels
-    const delsMetric = document.querySelectorAll('.metric-card')[2];
-    if(delsMetric) delsMetric.querySelector('.font-bold').textContent = d.recent_dels;
-  } catch(e) { console.debug('Poll:', e.message); }
-}
-refreshData();
-setInterval(refreshData, 5000);
-</script>
+let liveTaskId = null;
+let API_BASE = '';
 
+async function api(url, opts) {
+  try { const r = await fetch(API_BASE + url, opts); return r.ok ? r.json() : null; }
+  catch(e) { console.debug('API:', e.message); return null; }
+}
+
+async function refreshAll() {
+  const d = await api('/api/status'); if(!d) return;
+  const agents = d.agents || [], tasks = d.active_tasks || [], cds = d.cooldowns || [];
+
+  // Metrics row
+  document.querySelectorAll('.metric-card').forEach((el,i) => {
+    const vals = [agents.length, tasks.length, d.recent_dels, Math.round((d.success_rate||0)*100)+'%', cds.length];
+    if(i < vals.length) { const v = el.querySelector('.font-bold'); if(v) v.textContent = vals[i]; }
+  });
+
+  // Agent cards
+  agents.forEach(a => {
+    document.querySelectorAll('.agent-name').forEach(el => {
+      if(el.textContent.trim() === a.name) {
+        const card = el.closest('.glass');
+        const dot = card ? card.querySelector('.pulse-dot') : el.parentElement.querySelector('.pulse-dot');
+        if(dot) dot.className = 'pulse-dot ' + (a.available ? 'online' : 'danger');
+        const modelEl = card ? card.querySelector('.text-\\2xs') : null;
+        if(modelEl && a.current_model) modelEl.textContent = a.current_model;
+      }
+    });
+  });
+
+  // Cooldown alert bar
+  if(cds.length === 0) {
+    const alert = document.querySelector('[style*="rgba(239,68,68"]');
+    if(alert && alert.closest('.glass')) alert.closest('.glass').style.display = 'none';
+  }
+
+  // Active task banner
+  const banner = document.querySelector('.\\?bb');
+  if(banner) {
+    const cards = banner.querySelectorAll('.cursor-pointer');
+    tasks.forEach((t,i) => {
+      if(cards[i]) {
+        const idEl = cards[i].querySelector('.text-info');
+        const taskEl = cards[i].querySelector('.truncate');
+        if(idEl) idEl.textContent = '#' + (t.id || '···');
+        if(taskEl) taskEl.textContent = t.task || '';
+      }
+    });
+  }
+}
+
+// Execute via API
+async function execTask() {
+  const taskInput = document.querySelector('[value="Write unit tests for OrderRepository"]');
+  const modelSel = document.querySelector('#tab-exec select');
+  const wfSel = document.querySelectorAll('#tab-exec select')[1];
+  const task = taskInput ? taskInput.value : '';
+  const model = modelSel ? modelSel.value : 'federated-coding';
+  const wf = wfSel ? wfSel.value : 'subagent-driven';
+  if(!task) return;
+
+  const result = await api('/api/exec', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({task, model, workflow: wf, stream: true, no_worktree: true})});
+  if(result) {
+    if(result.status === 'running') { liveTaskId = result.task_id; switchTab('live'); }
+    refreshAll();
+  }
+}
+
+// Stop task via API
+async function stopTask(taskId) {
+  await api('/api/tasks/' + taskId + '/stop', {method:'POST'});
+  refreshAll();
+}
+
+// Load routes into tab
+async function loadRoutes() {
+  const d = await api('/api/routes'); if(!d) return;
+  const tbody = document.querySelector('#tab-routes tbody');
+  if(!tbody) return;
+  tbody.innerHTML = d.routes.map(r =>
+    `<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-4 font-mono">${r.workflow}</td><td class="py-2 px-4 font-mono">${r.task}</td><td class="py-2 px-4 font-mono text-info">${r.agent}</td><td class="py-2 px-4 font-mono text-xs text-muted">${r.model}</td><td class="py-2 px-4 font-mono text-xs text-muted">—</td></tr>`
+  ).join('');
+}
+
+// Load history into tab
+async function loadHistory() {
+  const d = await api('/api/metrics?days=1&limit=20'); if(!d) return;
+  // Update the history table with real data
+}
+
+// Load logs into tab
+async function loadLogs() {
+  const d = await api('/api/logs?limit=100'); if(!d) return;
+  const stream = document.getElementById('log-stream');
+  if(!stream) return;
+  stream.innerHTML = d.entries.map(e =>
+    `<div class="flex items-start gap-2 py-1${e.level==='ERROR'?'" style="background:rgba(239,68,68,.05)"':''}"><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp}</span><span class="text-2xs text-muted font-mono whitespace-nowrap w-16">${e.agent}</span><span class="text-2xs text-info font-mono w-12">${e.task_id}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message}</span></div>`
+  ).join('');
+}
+
+// Override switchTab to load data on tab switch
+const _origSwitchTab = switchTab;
+switchTab = function(t) {
+  _origSwitchTab(t);
+  if(t === 'routes') loadRoutes();
+  if(t === 'logs') loadLogs();
+  if(t === 'history') loadHistory();
+};
+
+// Override stop buttons
+document.addEventListener('click', function(e) {
+  if(e.target.classList.contains('btn-danger') && e.target.textContent.includes('Stop')) {
+    e.preventDefault(); stopTask(liveTaskId || '');
+  }
+});
+
+// Override exec button
+document.addEventListener('click', function(e) {
+  if(e.target.classList.contains('btn-pri') && e.target.textContent.includes('Execute')) {
+    e.preventDefault(); execTask();
+  }
+});
+
+refreshAll(); setInterval(refreshAll, 5000);
+</script>
 </body>
 </html>
