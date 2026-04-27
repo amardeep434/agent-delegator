@@ -16,6 +16,7 @@ from delegator.models import DelegationRequest
 from delegator.utils import load_json, save_json
 
 _active_tasks = {}
+_active_outputs = {}  # task_id -> list of output lines
 _scheduled_tasks = []
 _pending_queue = []
 _notification_config = {
@@ -23,43 +24,6 @@ _notification_config = {
     "webhooks": {"slack_url": "", "events": []},
 }
 _current_project = os.getcwd()
-
-def _discover_projects():
-    """Scan for projects with .delegator.json in common locations."""
-    projects = []
-    search_dirs = [
-        os.path.expanduser("~"),
-        os.path.expanduser("~/projects"),
-        os.path.expanduser("~/workspace"),
-    ]
-    for base in search_dirs:
-        if not os.path.isdir(base):
-            continue
-        try:
-            for entry in os.listdir(base):
-                full = os.path.join(base, entry)
-                if os.path.isdir(full) and os.path.exists(os.path.join(full, ".delegator.json")):
-                    projects.append({"name": entry, "path": full})
-        except PermissionError:
-            continue
-    # Always include current directory
-    cwd = os.getcwd()
-    if os.path.exists(os.path.join(cwd, ".delegator.json")) and cwd not in [p["path"] for p in projects]:
-        projects.insert(0, {"name": os.path.basename(cwd), "path": cwd})
-    return projects[:10]
-
-
-def get_projects():
-    return {"projects": _discover_projects(), "current": _current_project}
-
-
-def post_project(body):
-    global _current_project
-    new_path = body.get("path", "")
-    if os.path.isdir(new_path):
-        _current_project = new_path
-        return {"status": "ok", "project": os.path.basename(_current_project)}
-    return {"status": "error", "message": "Project directory not found"}
 _last_cleanup = {}
 
 def _state_dir():
@@ -204,13 +168,30 @@ def get_config():
 
 
 def post_config(body):
-    """Save configuration updates."""
     key = body.get("key", "")
     if key == "notifications":
         _save_notification_config(body.get("notifications", _notification_config))
-        return {"status": "ok", "message": "Notification config saved"}
+        return {"status": "ok", "message": "Notification config persisted"}
+    if key == "auto_heal":
+        # Reset all cooldowns by clearing the cooldowns file
+        from delegator.state import cooldowns_path
+        save_json(str(cooldowns_path()), {})
+        return {"status": "ok", "message": "All cooldowns reset"}
+    if key == "clear_history":
+        from delegator.metrics import clear_delegations
+        clear_delegations()
+        return {"status": "ok", "message": "History cleared"}
     if key == "cooldown":
-        return {"status": "ok", "message": "Cooldown config saved (requires restart)"}
+        # Save to notification_config as a proxy for now
+        cfg = _load_notification_config()
+        cfg["cooldown_overrides"] = body.get("config", {})
+        _save_notification_config(cfg)
+        return {"status": "ok", "message": "Circuit breaker config saved"}
+    if key == "preferences":
+        cfg = _load_notification_config()
+        cfg["preferences"] = body.get("prefs", {})
+        _save_notification_config(cfg)
+        return {"status": "ok", "message": "Preferences saved"}
     if key == "add_scheduled":
         _scheduled_tasks.append({"task": body.get("task",""), "model": body.get("model","federated-coding"),
                                   "workflow": body.get("workflow","subagent-driven"), "cron": body.get("cron","")})
@@ -219,6 +200,15 @@ def post_config(body):
         _pending_queue.append({"task": body.get("task",""), "model": body.get("model","federated-coding"),
                                 "workflow": body.get("workflow","subagent-driven")})
         return {"status": "ok", "message": "Task queued"}
+    if key == "start_queued":
+        idx = body.get("index", 0)
+        if 0 <= idx < len(_pending_queue):
+            q = _pending_queue.pop(idx)
+            req = DelegationRequest(task=q["task"], model=q["model"], workflow=q["workflow"], no_worktree=True)
+            t = threading.Thread(target=lambda: execute(req), daemon=True)
+            t.start()
+            return {"status": "ok", "message": f"Started: {q['task']}"}
+        return {"status": "error", "message": "Invalid queue index"}
     return {"status": "ok", "message": "Config saved"}
 
 
@@ -302,9 +292,9 @@ def post_stop_task(task_id):
 
 def get_task_output(task_id):
     if task_id in _active_tasks:
-        return {"task_id": task_id, "status": "running", "output": ""}
+        return {"task_id": task_id, "status": "running", "output": "\n".join(_active_outputs.get(task_id, [])[-20:])}
     recent = get_recent_delegations(20)
     for d in recent:
         if d.get("id") == task_id:
-            return {"task_id": task_id, "status": "done", "output": ""}
+            return {"task_id": task_id, "status": "done", "output": f"Provider: {d.get('provider_used','')}\nDuration: {d.get('duration_ms',0)}ms\nFallbacks: {d.get('fallback_count',0)}\nSuccess: {d.get('success')}"}
     return {"status": "error", "message": "Task not found"}
