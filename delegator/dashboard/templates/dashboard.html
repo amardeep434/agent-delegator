@@ -5,17 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>delegator — Mission Control</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script>tailwind.config={theme:{extend:{colors:{bg:'#020617',surface:'#0F172A',border:'#1E293B',accent:'#22C55E',accentdim:'#166534',text:'#F8FAFC',muted:'#94A3B8',danger:'#EF4444',warn:'#F59E0B',info:'#3B82F6',purple:'#8B5CF6',pink:'#EC4899',cyan:'#06B6D4'},fontFamily:{mono:['JetBrains Mono','monospace'],sans:['Fira Sans','sans-serif']}}}}</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#020617;font-family:'Fira Sans',sans-serif;color:#F8FAFC;overflow-x:hidden;padding-bottom:44px}
+body{background:#020617;font-family:'Fira Sans',sans-serif;color:#F8FAFC;overflow-x:hidden;padding-bottom:40px}
 .pulse-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
 .pulse-dot.online{background:#22C55E;box-shadow:0 0 8px #22C55E;animation:pulse 2s infinite}
 .pulse-dot.warning{background:#F59E0B;box-shadow:0 0 6px #F59E0B;animation:pulse 1.5s infinite}
 .pulse-dot.danger{background:#EF4444;box-shadow:0 0 6px #EF4444}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.glass{background:#0F172A;border:1px solid #1E293B;border-radius:12px;transition:border-color 200ms}
+.glass{background:#0F172A;border:1px solid #1E293B;border-radius:10px;transition:border-color 200ms}
 .glass:hover{border-color:#334155}
 .glass-sel{border-color:#22C55E!important;background:rgba(34,197,94,.06)!important}
 .btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 16px;border-radius:6px;cursor:pointer;transition:all 150ms;border:none;font-weight:600}
@@ -24,59 +24,95 @@ body{background:#020617;font-family:'Fira Sans',sans-serif;color:#F8FAFC;overflo
 .btn-ghost{background:transparent;color:#94A3B8;border:1px solid #1E293B}.btn-ghost:hover{color:#F8FAFC;border-color:#334155}
 .btn-info{background:transparent;color:#3B82F6;border:1px solid rgba(59,130,246,.3)}.btn-info:hover{background:rgba(59,130,246,.1)}
 .status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace}
-.s-ok{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}.s-fail{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}.s-warn{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}.s-info{background:rgba(59,130,246,.15);color:#3B82F6;border:1px solid rgba(59,130,246,.3)}.s-purple{background:rgba(139,92,246,.15);color:#8B5CF6;border:1px solid rgba(139,92,246,.3)}
+.s-ok{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
+.s-fail{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.s-rate{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.s-info{background:rgba(59,130,246,.15);color:#3B82F6;border:1px solid rgba(59,130,246,.3)}
+.s-purple{background:rgba(139,92,246,.15);color:#8B5CF6;border:1px solid rgba(139,92,246,.3)}
 .kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 5px;border-radius:3px;background:#1E293B;border:1px solid #334155;color:#94A3B8}
-.input{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color 200ms}.input:focus{border-color:#22C55E}
-.select{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;transition:border-color 200ms}.select:hover{border-color:#22C55E}
-.progress{height:6px;border-radius:3px;background:#1E293B;overflow:hidden}.fill-g{background:#22C55E;height:100%;border-radius:3px;transition:width 1s ease}.fill-y{background:#F59E0B}.fill-r{background:#EF4444}.fill-b{background:#3B82F6}
-.tab{padding:8px 20px;cursor:pointer;border-bottom:2px solid transparent;transition:all 200ms;color:#64748B;font-size:13px;font-family:'JetBrains Mono',monospace}.tab.active{color:#22C55E;border-bottom-color:#22C55E}.tab:hover{color:#94A3B8}
-.log{font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 0}.log.m{color:#64748B}.log.g{color:#22C55E}.log.y{color:#F59E0B}.log.b{color:#3B82F6}
+.input{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color 200ms;width:100%}
+.input:focus{border-color:#22C55E}
+.select{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;transition:border-color 200ms}
+.select:hover{border-color:#22C55E}
+.progress{height:4px;border-radius:2px;background:#1E293B;overflow:hidden}.progress .fill{height:100%;border-radius:2px;transition:width 1s ease}
+.fill-g{background:#22C55E}.fill-y{background:#F59E0B}.fill-r{background:#EF4444}.fill-b{background:#3B82F6}.fill-p{background:#8B5CF6}
+.tab{padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all 200ms;color:#64748B;font-size:13px;font-family:'JetBrains Mono',monospace}
+.tab.active{color:#22C55E;border-bottom-color:#22C55E}.tab:hover{color:#94A3B8}
+.log{font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 0}
+.log.m{color:#64748B}.log.g{color:#22C55E}.log.y{color:#F59E0B}.log.b{color:#3B82F6}.log.p{color:#8B5CF6}
 .terminal{background:#020617;border:1px solid #1E293B;border-radius:8px;overflow:hidden}
 .t-head{background:#0F172A;padding:8px 14px;display:flex;gap:6px;align-items:center;border-bottom:1px solid #1E293B}
 .t-dot{width:10px;height:10px;border-radius:50%}.t-dot.r{background:#EF4444}.t-dot.y{background:#F59E0B}.t-dot.g{background:#22C55E}
-.t-body{padding:12px 14px;max-height:500px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px}
+.t-body{padding:12px 14px;max-height:450px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px}
 .typing::after{content:' ▌';animation:blink 1s step-end infinite;color:#22C55E}@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .tooltip-trigger{position:relative;display:inline-flex;align-items:center}
-.tooltip-content{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #475569;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;white-space:normal;z-index:200;max-width:320px;font-family:'Fira Sans',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
-.tooltip-content b{color:#F8FAFC;font-family:'JetBrains Mono',monospace;font-size:10px}.tooltip-content code{color:#86EFAC;font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(34,197,94,.1);padding:1px 4px;border-radius:3px}
+.tooltip-content{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #475569;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;white-space:normal;z-index:200;max-width:320px;min-width:180px;font-family:'Fira Sans',sans-serif;font-weight:400;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
+.tooltip-content b{color:#F8FAFC;font-family:'JetBrains Mono',monospace;font-size:10px}
+.tooltip-content code{color:#86EFAC;font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(34,197,94,.1);padding:1px 4px;border-radius:3px}
 .tooltip-trigger:hover .tooltip-content{display:block}
-.info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(148,163,184,.15);color:#94A3B8;font-size:12px;font-weight:700;cursor:help;transition:all 150ms}.info-icon:hover{background:rgba(59,130,246,.2);color:#60A5FA}
+#set-notifications .glass{overflow:visible}
+#set-notifications{overflow:visible}
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(148,163,184,.15);color:#94A3B8;font-size:12px;font-weight:700;cursor:help;transition:all 150ms}
+.info-icon:hover{background:rgba(59,130,246,.2);color:#60A5FA}
 .toast-panel{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:340px}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-.compare-col{border:2px dashed #1E293B;border-radius:8px;padding:12px}.compare-col.running{border-color:#22C55E;border-style:solid}
-.metric-value{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700}.metric-label{font-size:11px;color:#64748B;text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center}
+.modal{background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto}
+.heart{font-size:14px;cursor:pointer;transition:all 200ms;opacity:.4}.heart:hover,.heart.liked{opacity:1;color:#EC4899}
+.bar-group{display:flex;align-items:flex-end;gap:2px;height:80px}
+.bar{width:14px;border-radius:2px 2px 0 0;transition:height .5s ease;min-height:2px}
+.bar.g{background:#22C55E}.bar.r{background:#EF4444}.bar.b{background:#3B82F6}.bar.y{background:#F59E0B}
+body.light{background:#F8FAFC;color:#0F172A}
+body.light .glass{background:#FFFFFF;border-color:#E2E8F0}
+body.light .tab{color:#64748B}body.light .tab.active{color:#059669}
+body.light .terminal{background:#F1F5F9;border-color:#E2E8F0}
+body.light .t-body{background:#F8FAFC}
+body.light .t-head{background:#E2E8F0}
+body.light .input,body.light .select{background:#F8FAFC;border-color:#CBD5E1;color:#0F172A}
+body.light .kbd{background:#E2E8F0;border-color:#CBD5E1;color:#475569}
+body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
+.compare-col{border:2px dashed #1E293B;border-radius:8px;padding:12px;transition:border-color 200ms}
+.compare-col:hover{border-color:#3B82F6}
+.compare-col.running{border-color:#22C55E;border-style:solid;border-width:2px}
+.compare-col.done{border-color:#8B5CF6;border-style:solid}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#020617}::-webkit-scrollbar-thumb{background:#1E293B;border-radius:3px}
-body.light{background:#F8FAFC;color:#0F172A}body.light .glass{background:#FFFFFF;border-color:#E2E8F0}body.light .tab.active{color:#059669}body.light .terminal{background:#F1F5F9;border-color:#E2E8F0}body.light .t-body{background:#F8FAFC}.t-head{background:#E2E8F0}body.light .input,body.light .select{background:#F8FAFC;border-color:#CBD5E1;color:#0F172A}
-#set-notifications .glass{overflow:visible}#set-notifications{overflow:visible}
 </style>
 </head>
 <body class="min-h-screen p-6">
 <div class="max-w-7xl mx-auto">
 
-<!-- HEADER -->
-<div class="flex items-center justify-between mb-6">
+<!-- ===== HEADER ===== -->
+<div class="flex items-center justify-between mb-4">
   <div class="flex items-center gap-4">
-    <h1 class="font-mono text-xl font-bold"><span style="color:#22C55E;text-shadow:0 0 14px rgba(34,197,94,.35)">◈</span> delegator</h1>
+    <h1 class="font-mono text-xl font-bold"><span class="text-accent" style="text-shadow:0 0 14px rgba(34,197,94,.35)">&#9672;</span> delegator</h1>
     <span class="text-xs text-muted">Mission Control</span>
     <span class="text-muted text-xs">|</span>
-    <select class="select text-xs" style="padding:4px 8px" id="project-switcher" onchange="switchProject(this.value)"></select>
+    <div class="flex items-center gap-2">
+      <select class="select text-xs" style="padding:4px 8px" id="project-switcher" onchange="switchProject(this.value)"></select>
+      <span class="text-xs text-muted">[F7]</span>
+    </div>
   </div>
   <div class="flex items-center gap-4">
-    <button class="btn btn-info text-xs" style="padding:3px 10px" onclick="autoHeal()">🩺 Auto-Heal</button>
-    <button class="text-xs text-muted font-mono hover:text-text" onclick="document.body.classList.toggle('light')">☀ Theme</button>
+    <button class="text-xs text-muted font-mono hover:text-text" onclick="document.body.classList.toggle('light')">&#9728;/&#127769; Theme</button>
+    <button class="btn btn-info text-xs" style="padding:3px 10px" onclick="autoHeal()">&#129657; Auto-Heal</button>
+    <span class="text-muted text-xs">|</span>
+    <span class="text-xs text-muted font-mono">&#8984;K</span>
   </div>
 </div>
 
-<!-- ALERT BAR -->
-<div class="glass mb-4 p-3 flex items-center justify-between" id="alert-bar" style="display:none;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)">
+<!-- ===== TOAST PANEL ===== -->
+<div class="toast-panel"></div>
+
+<!-- ===== ALERT BAR ===== -->
+<div class="glass mb-3 p-3 flex items-center justify-between" id="alert-bar" style="display:none;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)">
   <div class="flex items-center gap-3 flex-wrap" id="alert-msg"></div>
 </div>
 
-<!-- METRICS -->
-<div class="grid grid-cols-8 gap-3 mb-4" id="metrics-row"></div>
+<!-- ===== METRICS ===== -->
+<div class="grid grid-cols-8 gap-2 mb-3" id="metrics-row"></div>
 
-<!-- ACTIVE TASKS BANNER -->
-<div class="glass mb-4 overflow-hidden" id="tasks-banner" style="display:none;border-color:rgba(59,130,246,.2)">
+<!-- ===== ACTIVE TASKS BANNER ===== -->
+<div class="glass mb-3 overflow-hidden" id="tasks-banner" style="display:none;border-color:rgba(59,130,246,.2)">
   <div class="flex items-center justify-between px-4 py-2" style="background:rgba(59,130,246,.04);border-bottom:1px solid rgba(59,130,246,.1)">
     <div class="flex items-center gap-2" id="task-count"></div>
     <button class="btn btn-ghost text-xs" onclick="document.getElementById('task-cards').classList.toggle('hidden')">Collapse</button>
@@ -84,171 +120,446 @@ body.light{background:#F8FAFC;color:#0F172A}body.light .glass{background:#FFFFFF
   <div class="grid grid-cols-3 divide-x divide-border" id="task-cards"></div>
 </div>
 
-<!-- MAIN GRID -->
-<div class="grid grid-cols-12 gap-4">
+<!-- ===== MAIN GRID ===== -->
+<div class="grid grid-cols-12 gap-3">
+
   <!-- LEFT: Agent Cards -->
-  <div class="col-span-2 flex flex-col gap-2" id="agent-cards"></div>
+  <div class="col-span-2 space-y-2" id="agent-cards"></div>
 
   <!-- RIGHT: Tabs -->
-  <div class="col-span-10">
+  <div class="col-span-10 space-y-3">
     <div class="flex gap-0 border-b border-border" id="tab-bar"></div>
-    <div class="mt-4" id="tab-content"><div class="text-center text-muted text-sm pt-12">Loading...</div></div>
+
+    <!-- LIVE TAB -->
+    <div id="tab-live"></div>
+
+    <!-- LOGS TAB -->
+    <div id="tab-logs" class="hidden"></div>
+
+    <!-- HISTORY TAB -->
+    <div id="tab-history" class="hidden"></div>
+
+    <!-- ANALYTICS TAB -->
+    <div id="tab-analytics" class="hidden space-y-3"></div>
+
+    <!-- COMPARE TAB -->
+    <div id="tab-compare" class="hidden"></div>
+
+    <!-- QUEUE TAB -->
+    <div id="tab-queue" class="hidden space-y-3"></div>
+
+    <!-- EXEC TAB -->
+    <div id="tab-exec" class="hidden"></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="hidden space-y-3"></div>
+
   </div>
 </div>
 </div>
 
-<!-- TOAST -->
-<div class="toast-panel"></div>
-
-<!-- BOTTOM -->
-<div style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-top:1px solid #1E293B;padding:6px 24px;z-index:100;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;gap:24px">
+<!-- ===== BOTTOM STATUS BAR ===== -->
+<div style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-top:1px solid #1E293B;padding:6px 24px;z-index:100;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;gap:32px">
   <span><span class="kbd">L</span> Live</span><span><span class="kbd">O</span> Logs</span><span><span class="kbd">H</span> History</span><span><span class="kbd">A</span> Analytics</span><span><span class="kbd">C</span> Compare</span><span><span class="kbd">Q</span> Queue</span><span><span class="kbd">E</span> Exec</span><span><span class="kbd">S</span> Settings</span>
-  <span class="text-muted">|</span><span><span class="kbd">1-3</span> Tasks</span><span><span class="kbd">F7</span> Project</span><span><span class="kbd">⌘K</span> Focus Exec</span><span><span class="kbd">?</span> Help</span>
+  <span class="text-muted">|</span>
+  <span><span class="kbd">1-3</span> Tasks</span><span><span class="kbd">F7</span> Project</span><span><span class="kbd">&#8984;K</span> Commands</span><span><span class="kbd">?</span> Help</span>
+</div>
+
+<!-- Shortcuts Modal -->
+<div id="shortcuts-modal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal" style="max-width:700px">
+    <div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">&#9000; Keyboard Shortcuts</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+      <div class="text-muted uppercase tracking-wide text-2xs font-mono">Tabs</div><div></div>
+      <div><span class="kbd">L</span> Live View</div><div><span class="kbd">O</span> Logs</div>
+      <div><span class="kbd">H</span> History</div><div><span class="kbd">A</span> Analytics</div>
+      <div><span class="kbd">C</span> Compare A/B</div><div><span class="kbd">Q</span> Queue</div>
+      <div><span class="kbd">E</span> Execute Task</div><div><span class="kbd">S</span> Settings</div>
+      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">Tasks</div><div></div>
+      <div><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Select active task</div><div><span class="kbd">&#9166;</span> Run in Exec tab</div>
+      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">System</div><div></div>
+      <div><span class="kbd">F7</span> Switch project</div><div><span class="kbd">&#8984;K</span> Command palette</div>
+      <div><span class="kbd">?</span> Toggle this help</div><div><span class="kbd">Esc</span> Close modal / dismiss</div>
+    </div>
+  </div>
 </div>
 
 <script>
 let liveTaskId=null,activeTab='live',settingsTab='routing';
+let _prevTaskCount=0,_logEntries=[],_historyEntries=[];
 const TABS=['live','logs','history','analytics','compare','queue','exec','settings'];
+const COMPARE_MODELS=['opencode-go/deepseek-v4-pro','claude-sonnet-4-6','opencode-go/minimax-m2.7','federated-coding','federated-free','copilot/gpt-5.4'];
+
 async function api(u,o){try{const r=await fetch(u,o);return r.ok?r.json():null}catch(e){return null}}
 
-// === RENDER ALL ===
+function showToast(msg,type='success'){
+  const p=document.querySelector('.toast-panel');if(!p)return;
+  const d=document.createElement('div');d.className='glass p-3 flex items-center gap-3';
+  const bc=type==='error'?'rgba(239,68,68,.3)':type==='info'?'rgba(59,130,246,.3)':'rgba(34,197,94,.3)';
+  d.style.cssText=`animation:slideIn .3s ease;border-color:${bc};max-width:340px`;
+  d.innerHTML=`<span class="pulse-dot ${type==='error'?'danger':'online'}"></span><div class="text-xs font-mono">${msg}</div><span style="cursor:pointer;margin-left:12px;font-size:14px" onclick="this.parentElement.remove()">&times;</span>`;
+  p.appendChild(d);setTimeout(()=>d.remove(),8000);
+}
+
+// === RENDERERS ===
 async function renderAll(){
   const d=await api('/api/status');if(!d)return;
   renderMetrics(d);renderAgents(d);renderTasks(d);renderAlert(d);
-  const cds=document.querySelectorAll('#settings-sub #cooldown-list');
-  if(cds.length){const cd=d.cooldowns||[];cds[0].innerHTML=cd.length?cd.map(c=>`<div class="flex items-center justify-between mb-1"><span class="font-mono text-xs">${c.key}</span><span class="status s-warn">cooldown</span></div>`).join(''):'<div class="font-mono text-xs text-accent">No active cooldowns</div>'}
 }
 
 function renderMetrics(d){
-  document.getElementById('metrics-row').innerHTML=[['Active Agents',d.agents.length,'text-accent'],['Running',d.active_tasks.length,'text-info'],['7d Dels',d.recent_dels,'text-text'],['Success',Math.round((d.success_rate||0)*100)+'%','text-accent'],['Cooldowns',d.cooldowns.length,'text-warn'],['Queued',d.pending_queue||0,'text-purple'],['Routes',14,'text-pink'],['Cost','$'+(d.agents||[]).reduce((s,a)=>(s+(a.est_cost||0)),0).toFixed(2),'text-cyan']].map(([l,v,c])=>`<div class="glass p-3 text-center"><div class="metric-value ${c}">${v}</div><div class="metric-label">${l}</div></div>`).join('')
+  const el=document.getElementById('metrics-row');if(!el)return;
+  const tc=(d.agents||[]).reduce((s,a)=>s+(a.est_cost||0),0);
+  const data=[['Active Agents',d.agents?.length||0,'text-accent'],['Running',d.active_tasks?.length||0,'text-info'],['7d Dels',d.recent_dels||0,'text-text'],['Success',Math.round((d.success_rate||0)*100)+'%','text-accent'],['Cooldowns',d.cooldowns?.length||0,'text-warn'],['Queued',d.pending_queue||0,'text-purple'],['Routes',14,'text-pink'],['Cost 7d','$'+tc.toFixed(2),'text-cyan']];
+  el.innerHTML=data.map(([l,v,c])=>`<div class="glass p-2 text-center"><div class="text-sm font-mono font-bold ${c}">${v}</div><div class="text-2xs text-muted uppercase">${l}</div></div>`).join('');
 }
 
 function renderAgents(d){
-  document.getElementById('agent-cards').innerHTML=d.agents.map(a=>`<div class="glass p-3 cursor-pointer" onclick="openAgentModal('${a.name}')"><div class="flex items-center gap-2 mb-1"><span class="pulse-dot ${a.available?'online':'danger'}"></span><span class="font-mono text-xs font-semibold">${a.name}</span><span class="text-xs text-cyan ml-auto font-mono">$${a.est_cost||0}</span></div><div class="text-2xs text-muted">${a.current_model||'—'}</div><div class="flex items-center justify-between mt-2"><div class="progress flex-1 mr-2"><div class="fill-g" style="width:${Math.round((a.success_rate||0)*100)}%"></div></div><span class="text-2xs text-accent font-mono">${Math.round((a.success_rate||0)*100)}%</span></div><div class="text-2xs text-muted mt-1">${a.model_count} models · ${a.del_count||0} dels</div></div>`).join('')
+  const el=document.getElementById('agent-cards');if(!el)return;
+  el.innerHTML=(d.agents||[]).map(a=>{
+    const rp=Math.round((a.success_rate||0)*100);
+    const bc=rp>80?'fill-g':rp>50?'fill-y':'fill-r';
+    const sc=a.available?'online':'danger';
+    return `<div class="glass p-2 cursor-pointer relative" onclick="openAgentModal('${a.name}')"><div class="flex items-center gap-2"><span class="pulse-dot ${sc}"></span><span class="font-mono text-xs font-semibold">${a.name}</span><span class="text-2xs text-cyan ml-auto">$${(a.est_cost||0).toFixed(2)}</span></div><div class="text-2xs text-muted">${a.current_model||'&#8212;'}</div><div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill ${bc}" style="width:${rp}%"></div></div><span class="text-2xs text-${rp>80?'accent':rp>50?'warn':'danger'} font-mono">${rp}%</span></div><div class="text-2xs text-muted mt-1">${a.model_count} models &#183; ${a.del_count||0} dels</div></div>`;
+  }).join('');
 }
 
 function renderTasks(d){
   const tasks=d.active_tasks||[];const b=document.getElementById('tasks-banner');
   if(!tasks.length){b.style.display='none';return}
   b.style.display='';
-  document.getElementById('task-count').innerHTML=`<span class="pulse-dot online"></span><span class="font-mono text-xs text-info font-semibold">${tasks.length} Active - Press 1-${Math.min(tasks.length,9)}</span>`;
-  document.getElementById('task-cards').innerHTML=tasks.map((t,i)=>`<div class="p-3 cursor-pointer" id="task-${i}" onclick="document.querySelectorAll('#task-cards>div').forEach(e=>e.classList.remove('glass-sel'));this.classList.add('glass-sel');liveTaskId='${t.id}';switchTab('live')" style="border-bottom:1px solid #1E293B"><div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#${(t.id||'').slice(0,8)}</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">${Math.round(Date.now()/1000-(t.started_at||Date.now()/1000))}s</span><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation();stopTask('${t.id}')">Stop</button></div></div><div class="text-xs text-muted mb-1">${t.agent||'—'} · ${t.model||'—'}</div><div class="text-xs text-text truncate">${t.task||'—'}</div><div class="progress mt-2"><div class="fill-g" style="width:${Math.min(Math.round((Date.now()/1000-(t.started_at||Date.now()/1000))/60*100),95)}%"></div></div></div>`).join('')
+  const tc=document.getElementById('task-count');
+  if(tc)tc.innerHTML=`<span class="pulse-dot online"></span><span class="font-mono text-xs text-info font-semibold">${tasks.length} Active</span><span class="text-muted text-xs">Press <span class="kbd">1-${Math.min(tasks.length,9)}</span> for live view</span>`;
+  const cards=document.getElementById('task-cards');
+  if(cards)cards.innerHTML=tasks.map((t,i)=>{
+    const e=Math.round(Date.now()/1000-(t.started_at||Date.now()/1000));
+    const p=Math.min(Math.round(e/60*100),95);
+    return `<div class="glass p-3 cursor-pointer" id="task-${i}" onclick="selectTask('${t.id}','${i+1}')" style="border-bottom:1px solid #1E293B"><div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#${(t.id||'').slice(0,8)}</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">${e}s</span><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="event.stopPropagation();stopTask('${t.id}')">Stop</button></div></div><div class="text-xs text-muted mb-1">${t.agent||'&#8212;'} &#183; ${t.model||'&#8212;'}</div><div class="text-xs text-text truncate">${t.task||'&#8212;'}</div><div class="progress mt-1"><div class="fill fill-g" style="width:${p}%"></div></div></div>`;
+  }).join('');
 }
 
 function renderAlert(d){
-  const cds=d.cooldowns||[];const ab=document.getElementById('alert-bar');
-  if(!cds.length){ab.style.display='none';return}
-  ab.style.display='';document.getElementById('alert-msg').innerHTML=`<span class="font-mono text-xs text-danger">⚠ ${cds.length} agent(s) in cooldown:</span>${cds.map(c=>`<span class="font-mono text-xs text-warn mx-2">${c.key}</span>`).join('')}<button class="btn btn-info text-xs ml-3" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal All</button><button class="btn btn-ghost text-xs ml-2" onclick="document.getElementById('alert-bar').style.display='none'">Dismiss</button>`
+  const cds=d.cooldowns||[];const ab=document.getElementById('alert-bar');const msg=document.getElementById('alert-msg');
+  if(!ab||!msg)return;if(!cds.length){ab.style.display='none';return}
+  ab.style.display='';msg.innerHTML=`<span style="font-size:14px">&#9888;</span><span class="font-mono text-xs text-danger">${cds.length} agent(s) in cooldown:</span>`+cds.map(c=>`<span class="font-mono text-xs text-warn mx-2">${c.key}${c.remaining_seconds?' ('+Math.round(c.remaining_seconds/60)+'m)':''}</span>`).join('')+`<button class="btn btn-info text-xs ml-3" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal All</button><button class="btn btn-ghost text-xs ml-2" onclick="document.getElementById('alert-bar').style.display='none'">Dismiss</button>`;
 }
 
-// === TAB RENDERERS ===
-async function renderLive(){
-  document.getElementById('tab-content').innerHTML=liveTaskId?`<div class="terminal"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-xs text-muted">delegator live — ${liveTaskId.slice(0,8)}</span></div><div class="t-body" id="live-body" style="max-height:550px"><div class="log m">Loading...</div></div></div><div class="glass p-3 mt-3 flex items-center gap-3"><span class="font-mono text-xs text-muted" id="live-task-info"></span><div class="flex gap-2 ml-auto"><button class="btn btn-danger" onclick="stopTask()">Stop</button><button class="btn btn-ghost" onclick="execTask()">Rerun</button><button class="btn btn-ghost" onclick="navigator.clipboard.writeText(document.querySelector('.t-body')?.textContent||'');showToast('Copied!')">Copy</button></div></div>`:'<div class="glass p-6 text-center"><div class="text-muted text-sm mb-2">No task selected</div><div class="font-mono text-xs text-accentdim">Click an active task above or execute a new task</div></div>';
-  if(liveTaskId)loadLiveOutput()
+// === TAB SWITCHING ===
+function switchTab(t){
+  activeTab=t;
+  document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});
+  document.querySelectorAll('[id^="tab-"]').forEach(e=>{if(e.id!=='tab-bar')e.classList.add('hidden')});
+  document.getElementById('tab-'+t)?.classList.remove('hidden');
+  if(t==='live')loadLive();if(t==='logs'){_logEntries=[];loadLogs()}if(t==='history')loadHistory();if(t==='analytics')loadAnalytics();if(t==='compare')loadCompare();if(t==='queue')loadQueue();if(t==='exec')loadExec();if(t==='settings')loadSettings();
+}
+
+function switchSettingsTab(t){
+  settingsTab=t;const parent=document.getElementById('tab-settings');if(!parent)return;
+  const stabs=['routing','control','notifications','general'];
+  parent.querySelectorAll('.tab').forEach((e,i)=>{e.classList.toggle('active',stabs[i]===t)});
+  parent.querySelectorAll('[id^="set-"]').forEach(e=>e.classList.add('hidden'));
+  document.getElementById('set-'+t)?.classList.remove('hidden');
+}
+
+// === PROJECTS ===
+async function loadProjects(){
+  const d=await api('/api/projects');if(!d)return;
+  const sel=document.getElementById('project-switcher');
+  if(sel){sel.innerHTML=d.projects.map(p=>`<option value="${p.path}" ${p.path===d.current?'selected':''}>&#128193; ${p.name}</option>`).join('');if(d.current)sel.value=d.current;}
+}
+async function switchProject(path){await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});renderAll();}
+
+// === LIVE ===
+function loadLive(){
+  const el=document.getElementById('tab-live');if(!el)return;
+  if(!liveTaskId){el.innerHTML=`<div class="glass p-6 text-center"><div class="text-muted text-sm mb-2">No task selected</div><div class="font-mono text-xs text-accentdim">Click an active task above or execute a new task</div></div>`;return;}
+  el.innerHTML=`<div class="terminal"><div class="t-head"><div class="t-dot r"></div><div class="t-dot y"></div><div class="t-dot g"></div><span class="font-mono text-xs text-muted ml-2">delegator live &#8212; #${liveTaskId.slice(0,8)}</span></div><div class="t-body" id="live-body" style="max-height:550px"><div class="log m">Loading...</div></div></div><div class="glass p-3 mt-2 flex items-center justify-between"><div class="flex items-center gap-4"><span class="font-mono text-xs">#${liveTaskId.slice(0,8)}</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs" id="live-agent-model">&#8212;</span></div><div class="flex gap-2"><button class="btn btn-danger" onclick="stopTask('${liveTaskId}')">Stop</button><button class="btn btn-ghost" onclick="rerunTask()">Rerun</button><button class="btn btn-ghost" onclick="copyOutput()">Copy</button></div></div>`;
+  loadLiveOutput();
 }
 async function loadLiveOutput(){
-  const d=await api('/api/tasks/'+liveTaskId+'/output');
-  const b=document.getElementById('live-body');
-  if(b&&d){b.innerHTML=`<div class="log g">Status: ${d.status||'unknown'}</div><div class="log m whitespace-pre-wrap">${d.output||'No output yet'}</div>`}
+  if(!liveTaskId)return;const d=await api('/api/tasks/'+liveTaskId+'/output');const b=document.getElementById('live-body');
+  if(b&&d){const o=(d.output||'No output yet').replace(/\n/g,'<br>');b.innerHTML=`<div class="log g">Status: ${d.status||'unknown'}</div><div class="log m whitespace-pre-wrap">${o}</div>`;}
+}
+function selectTask(id,n){liveTaskId=id;document.querySelectorAll('#task-cards > div').forEach(e=>e.classList.remove('glass-sel'));const el=document.getElementById('task-'+(parseInt(n)-1));if(el)el.classList.add('glass-sel');switchTab('live');}
+function rerunTask(){switchTab('exec');}
+function copyOutput(){const tb=document.querySelector('#tab-live .t-body');if(tb){navigator.clipboard.writeText(tb.textContent);showToast('Copied!');}}
+
+// === LOGS ===
+async function loadLogs(){
+  const d=await api('/api/logs?limit=200');if(!d)return;_logEntries=d.entries||[];
+  const el=document.getElementById('tab-logs');if(!el)return;
+  el.innerHTML=`<div class="flex items-center gap-3 mb-2 flex-wrap"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" id="log-agent-filter" onchange="filterLogs()"><option>All agents</option></select><select class="select text-xs" style="padding:4px 8px" id="log-level-filter" onchange="filterLogs()"><option>All levels</option><option>ERROR</option><option>INFO</option></select><input type="text" class="input" style="max-width:200px;padding:4px 8px" placeholder="Search logs..." id="log-search" onkeyup="filterLogs()"><span class="text-muted text-xs ml-auto" id="log-count">${d.total||0} entries</span><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportLogs()">Export</button><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="clearLogs()">Clear</button></div><div class="grid grid-cols-12 gap-3"><div class="col-span-9 terminal"><div class="t-head"><div class="t-dot g"></div><div class="t-dot y"></div><div class="t-dot r"></div><span class="font-mono text-xs text-muted ml-2">delegator logs &#8212; streaming</span></div><div class="t-body" style="max-height:550px;overflow-y:auto;font-size:11px;" id="log-stream"></div></div><div class="col-span-3 space-y-3" id="log-sidebar"></div></div>`;
+  const agents=[...new Set(_logEntries.map(e=>e.agent))].filter(Boolean);
+  const af=document.getElementById('log-agent-filter');if(af)af.innerHTML='<option>All agents</option>'+agents.map(a=>`<option>${a}</option>`).join('');
+  renderLogStream(_logEntries);renderLogSidebar(d);
+}
+function renderLogStream(entries){
+  const s=document.getElementById('log-stream');if(!s)return;
+  s.innerHTML=entries.map(e=>`<div class="flex items-start gap-2 py-1"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'&#8212;'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.agent||'&#8212;'}</span><span class="text-2xs text-info font-mono">#${(e.task_id||'').slice(0,8)}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('')||'<div class="text-center text-muted text-xs p-4">No log entries</div>';
+}
+function renderLogSidebar(d){
+  const el=document.getElementById('log-sidebar');if(!el)return;
+  const bl=d.by_level||{};const ba=d.by_agent||{};const te=d.top_errors||[];
+  el.innerHTML=`<div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Metrics</h3><div class="space-y-2">${Object.entries(bl).map(([lvl,cnt])=>{const color=lvl==='ERROR'?'danger':lvl==='WARN'?'warn':lvl==='INFO'?'info':'purple';const fill=lvl==='ERROR'?'fill-r':lvl==='WARN'?'fill-y':lvl==='INFO'?'fill-b':'fill-p';return `<div class="flex justify-between"><span class="text-2xs text-muted">${lvl}</span><span class="font-mono text-xs text-${color}">${cnt}</span></div><div class="progress"><div class="fill ${fill}" style="width:${Math.min(cnt*2,100)}%"></div></div>`;}).join('')}</div><div class="border-t border-border mt-3 pt-2 space-y-1"><div class="flex justify-between text-2xs"><span class="text-muted">Error rate</span><span class="font-mono text-danger">${((d.error_rate||0)*100).toFixed(2)}%</span></div><div class="flex justify-between text-2xs"><span class="text-muted">Avg response</span><span class="font-mono text-accent">${d.avg_response_time||0}s</span></div></div></div><div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Top Errors</h3><div class="space-y-2 text-2xs font-mono">${te.map(e=>`<div><div class="text-danger">${e.type}</div><div class="text-muted">${e.count} occurrences</div></div>`).join('')||'<div class="text-muted">No errors</div>'}</div></div><div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Sources</h3><div class="space-y-1 text-2xs">${Object.entries(ba).map(([a,c])=>`<div class="flex justify-between"><span class="font-mono">${a}</span><span class="text-muted">${c}</span></div>`).join('')}</div></div>`;
+}
+function filterLogs(){
+  const ag=document.getElementById('log-agent-filter')?.value;const lv=document.getElementById('log-level-filter')?.value;const q=document.getElementById('log-search')?.value?.toLowerCase()||'';
+  let e=[..._logEntries];if(ag&&ag!=='All agents')e=e.filter(x=>x.agent===ag);if(lv&&lv!=='All levels')e=e.filter(x=>x.level===lv);if(q)e=e.filter(x=>JSON.stringify(x).toLowerCase().includes(q));
+  renderLogStream(e);
+}
+function exportLogs(){const c=document.getElementById('log-stream')?.textContent||'';const b=new Blob([c],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-logs.txt';a.click();}
+function clearLogs(){const s=document.getElementById('log-stream');if(s)s.innerHTML='';}
+
+// === HISTORY ===
+async function loadHistory(){
+  const d=await api('/api/metrics?days=14&limit=100');if(!d)return;_historyEntries=d.delegations||[];
+  const el=document.getElementById('tab-history');if(!el)return;
+  const agents=[...new Set(_historyEntries.map(r=>r.to_agent||r.provider_used||'&#8212;'))].filter(Boolean);
+  el.innerHTML=`<div class="flex items-center gap-3 mb-2"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" id="hist-agent-filter" onchange="filterHistory()"><option>All agents</option>${agents.map(a=>`<option>${a}</option>`).join('')}</select><span class="text-xs text-muted font-mono ml-auto" id="hist-count">${d.total||0} records</span><button class="btn btn-ghost text-xs" style="padding:3px 10px" onclick="exportHistory()">CSV Export</button></div><div class="glass overflow-hidden"><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase tracking-wider" style="background:rgba(30,41,59,.3)"><th class="py-2 px-2">Time</th><th class="py-2 px-2">Agent</th><th class="py-2 px-2">Model</th><th class="py-2 px-2">Task</th><th class="py-2 px-2">WF</th><th class="py-2 px-2">Dur</th><th class="py-2 px-2">FB</th><th class="py-2 px-2">Cost</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">&#10084;</th><th class="py-2 px-2"></th></tr></thead><tbody id="history-tbody"></tbody></table></div>`;
+  renderHistoryTable(_historyEntries);
+}
+function renderHistoryTable(entries){
+  const tb=document.getElementById('history-tbody');if(!tb)return;
+  tb.innerHTML=entries.map(r=>{
+    const t=new Date(r.timestamp||'');const tm=t.getTime()?t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'&#8212;';
+    const s=r.success?'OK':'FAIL';const cls=r.success?'s-ok':'s-fail';const liked=r.liked?'liked':'';const cost=r.cost?'$'+r.cost.toFixed(2):'&#8212;';
+    return `<tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">${tm}</td><td class="py-1 px-2 font-mono">${r.to_agent||r.provider_used||'&#8212;'}</td><td class="py-1 px-2 font-mono text-xs text-accent">${(r.model||'').slice(0,18)}</td><td class="py-1 px-2 truncate" style="max-width:160px" title="${r.task_type||''}">${r.task_type||'&#8212;'}</td><td class="py-1 px-2 font-mono text-muted">${r.workflow||'&#8212;'}</td><td class="py-1 px-2 font-mono text-muted">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'&#8212;'}</td><td class="py-1 px-2 font-mono text-muted">${r.fallback_count||0}</td><td class="py-1 px-2 font-mono text-cyan text-xs">${cost}</td><td class="py-1 px-2"><span class="status ${cls}">${s}</span></td><td class="py-1 px-2"><span class="heart ${liked}" onclick="toggleLike('${r.id}',this)">&#10084;</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 6px;font-size:10px" onclick="viewDelegation('${r.id}')">View</button>${!r.success?`<button class="btn btn-ghost" style="padding:2px 6px;font-size:10px" onclick="retryTask('${r.task_type||''}')">Retry</button>`:''}</div></td></tr>`;
+  }).join('')||'<tr><td colspan="11" class="text-center text-muted text-xs p-4">No records</td></tr>';
+}
+function filterHistory(){
+  const ag=document.getElementById('hist-agent-filter')?.value;
+  let e=[..._historyEntries];if(ag&&ag!=='All agents')e=e.filter(x=>(x.to_agent||x.provider_used)===ag);
+  renderHistoryTable(e);
+}
+async function toggleLike(id,el){
+  const liked=!el.classList.contains('liked');el.classList.toggle('liked');
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'like_delegation',delegation_id:id,liked})});
+}
+async function viewDelegation(id){
+  const d=await api('/api/metrics?days=30&limit=100');if(!d)return;
+  const del=d.delegations.find(r=>r.id===id);
+  if(del){alert(`#${del.id||'?'}
+Agent: ${del.to_agent}
+Model: ${del.model}
+Workflow: ${del.workflow}
+Task: ${del.task_type}
+Duration: ${del.duration_ms||0}ms
+Fallbacks: ${del.fallback_count||0}
+Success: ${del.success}`);}
+  else{alert('Task not found');}
+}
+function retryTask(task){showToast('Retry: '+task,'info');}
+function exportHistory(){
+  const h=document.querySelector('#tab-history table');if(h){const b=new Blob([h.textContent],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-history.csv';a.click();}
 }
 
-async function renderLogs(){
-  const d=await api('/api/logs?limit=200');const entries=d?d.entries:[];
-  document.getElementById('tab-content').innerHTML=`<div class="flex items-center gap-3 mb-3 flex-wrap"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" onchange="renderLogsFiltered()"><option>All agents</option>${[...new Set(entries.map(e=>e.agent))].map(a=>`<option>${a}</option>`).join('')}</select><select class="select text-xs" style="padding:4px 8px" onchange="renderLogsFiltered()"><option>All levels</option><option>ERROR</option><option>INFO</option></select><input class="input text-xs" style="max-width:200px;padding:4px 8px" placeholder="Search..." onkeyup="renderLogsFiltered()"><span class="text-xs text-muted font-mono ml-auto">${entries.length} entries</span><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportText('logs')">Export</button></div><div class="terminal" style="max-height:550px;overflow-y:auto" id="log-stream">${entries.map(e=>`<div class="flex items-start gap-2 py-1 px-3${e.level==='ERROR'?'" style="background:rgba(239,68,68,.05)':''}"><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap w-16">${e.agent||'—'}</span><span class="text-2xs text-info font-mono w-12">#${(e.task_id||'').slice(0,8)}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('')||'<div class="text-center text-muted text-xs p-4">No log entries yet</div>'}</div>`
+// === ANALYTICS ===
+async function loadAnalytics(){
+  const d=await api('/api/metrics?days=7&limit=200');if(!d)return;
+  const el=document.getElementById('tab-analytics');if(!el)return;
+  const dels=d.delegations||[];
+  const byDay={};dels.forEach(r=>{const dd=(r.timestamp||'').slice(0,10);if(!dd)return;if(!byDay[dd])byDay[dd]={t:0,o:0};byDay[dd].t++;if(r.success)byDay[dd].o++;});
+  const days=Object.entries(byDay).slice(-7);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const byAgent={};dels.forEach(r=>{const a=r.to_agent||'?';byAgent[a]=(byAgent[a]||0)+1;});
+  const maxA=Math.max(1,...Object.values(byAgent));
+  const costs=d.costs||{};const failures=d.failures||{};const maxF=Math.max(1,...Object.values(failures));const rankings=d.rankings||[];
+  el.innerHTML=`<div class="grid grid-cols-3 gap-3 mb-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Success Rate (7d)</h3><div class="bar-group items-end h-32">${days.map(([dd,data])=>{const dt=new Date(dd+'T00:00:00');const pct=data.t?Math.round(data.o/data.t*100):0;const cls=pct>80?'g':pct>50?'y':'r';return `<div class="flex flex-col items-center"><div class="bar ${cls}" style="height:${pct}%"></div><span class="text-2xs text-muted mt-1">${dn[dt.getDay()]}</span></div>`;}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Delegations by Agent</h3><div class="space-y-2">${Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([a,c],i)=>{const fills=['fill-g','fill-b','fill-y','fill-p','fill-r'];return `<div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">${a}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill ${fills[i%5]}" style="width:${Math.round(c/maxA*100)}%"></div></div></div>`;}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cost Breakdown</h3><div class="space-y-2 text-xs font-mono">${Object.entries(costs).map(([a,c])=>`<div class="flex justify-between"><span>${a}</span><span class="text-cyan">$${c.toFixed(2)}</span></div>`).join('')}<div class="border-t border-border pt-2 flex justify-between font-bold"><span>Total 7d</span><span class="text-cyan">$${Object.values(costs).reduce((a,b)=>a+b,0).toFixed(2)}</span></div></div><div class="flex gap-2 mt-3"><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportAnalyticsCSV()">CSV</button><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportAnalyticsPDF()">PDF</button></div></div></div><div class="grid grid-cols-2 gap-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Failure Types</h3><div class="space-y-2">${Object.entries(failures).map(([type,count])=>{const color=type==='rate_limit'?'warn':'danger';const fill=type==='rate_limit'?'fill-y':'fill-r';return `<div><div class="flex justify-between text-2xs mb-1"><span>${type}</span><span class="text-${color}">${count}</span></div><div class="progress"><div class="fill ${fill}" style="width:${Math.round(count/maxF*100)}%"></div></div></div>`;}).join('')||'<div class="text-muted text-xs">No failures</div>'}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Learned Rankings</h3><div class="space-y-2 text-xs font-mono">${rankings.map((r,i)=>{const stars=['&#9733;','&#9733;&#9733;','&#9733;&#9733;&#9733;'];const cls=r.score>0.8?'text-accent':r.score>0.5?'text-warn':'text-danger';return `<div class="flex justify-between"><span class="${cls}">${stars[Math.min(i,2)]} ${r.agent}</span><span>score ${r.score}</span><span class="text-muted">${r.dels} dels</span></div>`;}).join('')||'<div class="text-muted text-xs">No data</div>'}</div></div></div>`;
 }
-let _logEntries=[];async function renderLogsFiltered(){
-  if(!_logEntries.length){const d=await api('/api/logs?limit=500');_logEntries=d?d.entries:[]}
-  const ag=document.querySelector('#tab-content select')?.value;const lv=document.querySelectorAll('#tab-content select')[1]?.value;const q=document.querySelector('#tab-content input')?.value?.toLowerCase()||'';let e=_logEntries;if(ag&&ag!=='All agents')e=e.filter(x=>x.agent===ag);if(lv&&lv!=='All levels')e=e.filter(x=>x.level===lv);if(q)e=e.filter(x=>JSON.stringify(x).toLowerCase().includes(q));const s=document.getElementById('log-stream');if(s)s.innerHTML=e.map(e=>`<div class="flex items-start gap-2 py-1 px-3${e.level==='ERROR'?'" style="background:rgba(239,68,68,.05)':''}"><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap w-16">${e.agent||'—'}</span><span class="text-2xs text-info font-mono w-12">#${(e.task_id||'').slice(0,8)}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('')||'<div class="text-center text-muted text-xs p-4">No matching entries</div>'
+function exportAnalyticsCSV(){const els=document.querySelectorAll('#tab-analytics .text-xs.font-mono,#tab-analytics .text-2xs');const data=[];els.forEach(el=>data.push(el.textContent));const blob=new Blob([data.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-analytics.csv';a.click();}
+function exportAnalyticsPDF(){exportAnalyticsCSV();showToast('CSV exported (PDF requires additional deps)','info');}
+
+// === COMPARE ===
+function loadCompare(){
+  const el=document.getElementById('tab-compare');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
+  el.innerHTML=`<div class="flex items-center gap-3 mb-4"><input class="input flex-1" id="compare-task" placeholder="Task description..." value=""><button class="btn btn-pri" onclick="runCompare()">Run A/B Test</button></div><div class="grid grid-cols-2 gap-4"><div class="compare-col" id="compare-a"><div class="flex items-center justify-between mb-2"><span class="font-mono text-xs font-semibold">A:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${COMPARE_MODELS.map(m=>`<option>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">Output</span></div><div class="t-body" style="min-height:150px"><div class="text-muted text-xs text-center pt-6">Ready. Run A/B Test to compare.</div></div></div></div><div class="compare-col" id="compare-b"><div class="flex items-center justify-between mb-2"><span class="font-mono text-xs font-semibold">B:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${COMPARE_MODELS.map((m,i)=>`<option ${m==='claude-sonnet-4-6'?'selected':''}>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">Output</span></div><div class="t-body" style="min-height:150px"><div class="text-muted text-xs text-center pt-6">Ready.</div></div></div></div></div>`;
+}
+async function runCompare(){
+  const task=document.getElementById('compare-task')?.value;if(!task)return;
+  const sels=document.querySelectorAll('.compare-sel');const ma=sels[0]?.value;const mb=sels[1]?.value;
+  document.querySelectorAll('.compare-col').forEach(c=>c.classList.add('running'));
+  document.querySelectorAll('.compare-col .t-body').forEach(b=>b.innerHTML='<div class="log b">Running...</div>');
+  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});
+  if(!d)return;
+  ['A','B'].forEach((lbl,i)=>{
+    const r=d.results[lbl];if(!r)return;
+    const col=document.querySelectorAll('.compare-col')[i];const body=col?.querySelector('.t-body');
+    if(body)body.innerHTML=`<div class="log g">${r.success?'&#10003;':'&#10007;'} Provider: ${r.provider||'&#8212;'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'&#8212;'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log m whitespace-pre-wrap">${(r.output||'').slice(0,500)}</div>`;
+    col?.classList.remove('running');col?.classList.add('done');
+  });
 }
 
-async function renderHistory(){
-  const d=await api('/api/metrics?days=14&limit=100');const dels=d?d.delegations:[];
-  document.getElementById('tab-content').innerHTML=`<div class="flex items-center gap-3 mb-3"><select class="select text-xs" style="padding:4px 8px" onchange="renderHistory()"><option>All agents</option>${[...new Set(dels.map(r=>r.to_agent||r.provider_used||'—'))].map(a=>`<option>${a}</option>`).join('')}</select><span class="text-xs text-muted font-mono ml-auto">${dels.length} records</span><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportText('history')">CSV Export</button></div><div class="glass overflow-hidden"><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase tracking-wider" style="background:rgba(30,41,59,.3)"><th class="text-left py-2 px-3">Time</th><th class="text-left py-2 px-3">Agent</th><th class="text-left py-2 px-3">Model</th><th class="text-left py-2 px-3">Task</th><th class="text-left py-2 px-3">WF</th><th class="text-center py-2 px-3">Dur</th><th class="text-center py-2 px-3">FB</th><th class="text-center py-2 px-3">St</th><th class="text-center py-2 px-3"></th></tr></thead><tbody>${dels.map(r=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-muted">${(r.timestamp||'').slice(11,16)||'—'}</td><td class="py-2 px-3 font-mono">${r.to_agent||r.provider_used||'—'}</td><td class="py-2 px-3 font-mono text-xs text-accent">${(r.model||'').slice(0,18)}</td><td class="py-2 px-3 truncate max-w-xs" title="${r.task_type||''}">${r.task_type||'—'}</td><td class="py-2 px-3 font-mono text-muted">${r.workflow||'—'}</td><td class="py-2 px-3 font-mono text-muted text-center">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</td><td class="py-2 px-3 font-mono text-muted text-center">${r.fallback_count||0}</td><td class="py-2 px-3 text-center"><span class="status ${r.success?'s-ok':'s-fail'}">${r.success?'OK':'FAIL'}</span></td><td class="py-2 px-3 text-center flex gap-1 justify-center"><button class="btn btn-ghost" style="padding:2px 6px;font-size:9px" onclick="viewDelegation('${r.id}')">View</button>${!r.success?`<button class="btn btn-ghost" style="padding:2px 6px;font-size:9px" onclick="rerunExec()">Retry</button>`:''}</td></tr>`).join('')||'<tr><td colspan="9" class="text-center text-muted p-4">No delegations yet</td></tr>'}</tbody></table></div>`
+// === QUEUE ===
+async function loadQueue(){
+  const d=await api('/api/config');if(!d)return;
+  const el=document.getElementById('tab-queue');if(!el)return;
+  el.innerHTML=`<div class="grid grid-cols-2 gap-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Scheduled Tasks</h3>${(d.scheduled||[]).map(s=>`<div class="glass p-3 mb-2" style="background:rgba(139,92,246,.04)"><div class="flex items-center justify-between"><div><div class="font-mono text-xs">${s.task||''}</div><div class="text-2xs text-muted">${s.model} &#183; ${s.workflow}</div></div><div class="text-right"><span class="font-mono text-xs text-purple">${s.cron||'manual'}</span><div class="mt-1"><button class="btn btn-ghost text-xs" style="padding:2px 6px;font-size:9px" onclick="execFromQueue('${s.task}','${s.model}')">Run Now</button></div></div></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No scheduled tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addScheduled()">+ Add Scheduled Task</button></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Pending Queue</h3>${(d.pending_queue||[]).map((q,i)=>`<div class="flex items-center justify-between p-3" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">${q.task||''}</div><div class="text-2xs text-muted">${q.model} &#183; ${q.workflow}</div></div><div class="flex gap-2"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:9px" onclick="startQueued(${i})">Start</button></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No pending tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addPending()">+ Enqueue Task</button></div></div>`;
 }
-async function viewDelegation(id){const d=await api('/api/metrics?days=30&limit=100');if(!d)return;const del=d.delegations.find(r=>r.id===id);alert(del?`#${del.id}\nAgent: ${del.to_agent}\nModel: ${del.model}\nWorkflow: ${del.workflow}\nTask: ${del.task_type}\nDuration: ${del.duration_ms||0}ms\nFallbacks: ${del.fallback_count||0}\nSuccess: ${del.success}`:'Not found')}
-
-async function renderAnalytics(){
-  const d=await api('/api/metrics?days=14&limit=200');if(!d)return;const dels=d.delegations;
-  const byAgent={};dels.forEach(r=>{const a=r.to_agent||'?';byAgent[a]=(byAgent[a]||0)+1});const maxA=Math.max(1,...Object.values(byAgent));
-  const byDay={};dels.forEach(r=>{const dd=(r.timestamp||'').slice(0,10);if(!byDay[dd])byDay[dd]={t:0,o:0};byDay[dd].t++;if(r.success)byDay[dd].o++});const days=Object.entries(byDay).slice(-7);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const costs={};dels.forEach(r=>{const a=r.to_agent||'?';costs[a]=(costs[a]||0)+(r.duration_ms||0)*0.000001});
-  const fails=dels.filter(r=>!r.success);
-  document.getElementById('tab-content').innerHTML=`<div class="grid grid-cols-3 gap-4 mb-4"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Success Rate (7d)</h3><div class="flex items-end gap-1 h-24">${days.map(([dd,data])=>{const dt=new Date(dd+'T00:00:00');const pct=data.t?Math.round(data.o/data.t*100):0;const cls=pct>80?'g':pct>50?'y':'r';return`<div class="flex flex-col items-center" title="${dd}: ${data.o}/${data.t}"><div class="progress h-full flex items-end" style="width:14px"><div class="fill-${cls}" style="width:100%;height:${pct}%;min-height:2px;border-radius:2px 2px 0 0"></div></div><span class="text-2xs text-muted mt-1">${dn[dt.getDay()]}</span></div>`}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Delegations by Agent</h3>${Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([a,c])=>`<div class="mb-3"><div class="flex justify-between text-2xs font-mono mb-1"><span>${a}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill-g" style="width:${Math.round(c/maxA*100)}%"></div></div></div>`).join('')}</div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cost Breakdown</h3>${Object.entries(costs).map(([a,c])=>`<div class="flex justify-between text-xs font-mono mb-2"><span>${a}</span><span class="text-cyan">$${c.toFixed(2)}</span></div>`).join('')}<div class="border-t border-border pt-2 mt-2 flex justify-between font-bold font-mono text-xs"><span>Total</span><span class="text-cyan">$${Object.values(costs).reduce((a,b)=>a+b,0).toFixed(2)}</span></div><div class="flex gap-2 mt-3"><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportCSV()">CSV</button><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportCSV()">PDF</button></div></div></div><div class="grid grid-cols-2 gap-4"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Failure Types</h3>${[['Rate Limit',fails.filter(r=>r.fallback_count>0).length,'y'],['Other',fails.filter(r=>r.fallback_count===0).length,'r']].map(([l,v,c])=>`<div class="mb-3"><div class="flex justify-between text-2xs font-mono mb-1"><span>${l}</span><span class="text-warn">${v}</span></div><div class="progress"><div class="fill-${c}" style="width:${v}%"></div></div></div>`).join('')}</div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Learned Rankings</h3>${[...new Map(dels.map(r=>[r.to_agent,r])).values()].slice(0,5).map(r=>{const ad=dels.filter(x=>x.to_agent===r.to_agent);const sc=ad.filter(x=>x.success).length/ad.length;return`<div class="flex justify-between text-xs font-mono mb-2"><span style="color:${sc>0.8?'#22C55E':sc>0.5?'#F59E0B':'#EF4444'}">${r.to_agent||'?'}</span><span>${sc.toFixed(2)}</span><span class="text-muted">${ad.length} dels</span></div>`}).join('')}</div></div>`
+async function addScheduled(){
+  const t=prompt('Task description:');if(!t)return;const m=prompt('Model:','federated-coding')||'federated-coding';const c=prompt('Cron (e.g. 0 2 * * *):','')||'';
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:c})});
+  loadQueue();
+}
+async function addPending(){
+  const t=prompt('Task description:');if(!t)return;
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});
+  loadQueue();
+}
+async function startQueued(idx){
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'start_queued',index:idx})});
+  loadQueue();renderAll();
+}
+async function execFromQueue(task,model){
+  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});
+  if(r){liveTaskId=r.task_id;switchTab('live');renderAll();}
 }
 
-async function renderCompare(){
-  const models=['opencode-go/deepseek-v4-pro','claude-sonnet-4-6','opencode-go/minimax-m2.7','federated-coding','federated-free','copilot/gpt-5.4'];
-  document.getElementById('tab-content').innerHTML=`<div class="flex items-center gap-3 mb-4"><input class="input flex-1" id="compare-task" placeholder="Task description..." value=""><button class="btn btn-pri" onclick="runCompare()">Run A/B Test</button></div><div class="grid grid-cols-2 gap-4"><div class="compare-col"><div class="flex items-center justify-between mb-2"><span class="font-mono text-xs font-semibold">A:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${models.map(m=>`<option>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">Output</span></div><div class="t-body" style="min-height:150px"><div class="text-muted text-xs text-center pt-6">Ready. Run A/B Test to compare.</div></div></div></div><div class="compare-col"><div class="flex items-center justify-between mb-2"><span class="font-mono text-xs font-semibold">B:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${models.map(m=>`<option ${m==='claude-sonnet-4-6'?'selected':''}>${m}</option>`).join('')}</select></div><div class="terminal" style="min-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">Output</span></div><div class="t-body" style="min-height:150px"><div class="text-muted text-xs text-center pt-6">Ready.</div></div></div></div></div>`
-}
-async function runCompare(){const task=document.getElementById('compare-task')?.value;if(!task)return;const ma=document.querySelectorAll('.compare-sel')[0]?.value;const mb=document.querySelectorAll('.compare-sel')[1]?.value;document.querySelectorAll('.compare-col').forEach(c=>c.classList.add('running'));document.querySelectorAll('.t-body').forEach(b=>b.innerHTML='<div class="log b">Running...</div>');const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});if(!d)return;['A','B'].forEach((lbl,i)=>{const r=d.results[lbl];if(r){const b=document.querySelectorAll('.t-body')[i];if(b)b.innerHTML=`<div class="log g">${r.success?'✅':'❌'} Provider: ${r.provider||'—'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'—'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log m whitespace-pre-wrap">${(r.output||'').slice(0,500)}</div>`}})}
-
-async function renderQueue(){const d=await api('/api/config');
-  document.getElementById('tab-content').innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Scheduled Tasks</h3>${(d?.scheduled||[]).map(s=>`<div class="glass p-3 mb-2" style="background:rgba(139,92,246,.04)"><div class="flex items-center justify-between"><div><div class="font-mono text-xs">${s.task||''}</div><div class="text-2xs text-muted">${s.model} · ${s.workflow}</div></div><div class="text-right"><span class="font-mono text-xs text-purple">${s.cron||'manual'}</span><div class="mt-1"><button class="btn btn-ghost text-xs" style="padding:2px 6px;font-size:9px" onclick="execFromQueue('${s.task}','${s.model}')">Run Now</button></div></div></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No scheduled tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addScheduled()">+ Add Scheduled Task</button></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Pending Queue</h3>${(d?.pending_queue||[]).map((q,i)=>`<div class="flex items-center justify-between p-3" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">${q.task||''}</div><div class="text-2xs text-muted">${q.model} · ${q.workflow}</div></div><div class="flex gap-2"><span class="status s-purple">queued</span><button class="btn btn-ghost" style="padding:2px 6px;font-size:9px" onclick="startQueuedFromAPI(${i})">Start</button></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No pending tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addPending()">+ Enqueue Task</button></div></div>`
-}
-
-async function renderExec(){
+// === EXEC ===
+function loadExec(){
+  const el=document.getElementById('tab-exec');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
   const ms=['federated-coding','federated-sonnet','federated-free','claude-sonnet-4-6','opencode-go/deepseek-v4-pro','opencode-go/minimax-m2.7'];
-  document.getElementById('tab-content').innerHTML=`<div class="glass p-5 space-y-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Task</label><input class="input" id="exec-task" placeholder="Describe what the agent should do..."></div><div class="grid grid-cols-3 gap-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Model</label><select class="select w-full" id="exec-model">${ms.map(m=>`<option>${m}</option>`).join('')}</select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Workflow</label><select class="select w-full" id="exec-wf"><option>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">From Agent</label><select class="select w-full" id="exec-from"><option value="">auto-detect</option><option>claude</option><option>opencode</option><option>copilot</option></select></div></div><div class="flex items-center gap-4 pt-2"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500" id="exec-stream"><span class="text-xs text-muted font-mono">Stream</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500" id="exec-no-wt"><span class="text-xs text-muted font-mono">No worktree</span></label><button class="btn btn-pri ml-auto" onclick="execTask()">Execute ▶</button></div></div>`
+  el.innerHTML=`<div class="glass p-5 space-y-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Task</label><input class="input" id="exec-task" placeholder="Describe what the agent should do..."></div><div class="grid grid-cols-3 gap-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Model</label><select class="select w-full" id="exec-model">${ms.map(m=>`<option>${m}</option>`).join('')}</select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Workflow</label><select class="select w-full" id="exec-wf"><option>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">From Agent</label><select class="select w-full" id="exec-from"><option value="">auto-detect</option><option>claude</option><option>opencode</option><option>copilot</option></select></div></div><div class="flex items-center gap-4 pt-2"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500" id="exec-stream"><span class="text-xs text-muted font-mono">Stream</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500" id="exec-no-wt"><span class="text-xs text-muted font-mono">No worktree</span></label><button class="btn btn-pri ml-auto" onclick="execTask()">Execute &#9654;</button></div></div>`;
+}
+async function execTask(){
+  const t=document.getElementById('exec-task');if(!t?.value)return;
+  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t.value,model:document.getElementById('exec-model')?.value||'federated-coding',workflow:document.getElementById('exec-wf')?.value||'subagent-driven',from_agent:document.getElementById('exec-from')?.value||'',stream:document.getElementById('exec-stream')?.checked||false,no_worktree:document.getElementById('exec-no-wt')?.checked||false})});
+  if(r){liveTaskId=r.task_id;switchTab('live');renderAll();showToast('Task started');}
+}
+async function stopTask(id){
+  await api('/api/tasks/'+(id||liveTaskId||'')+'/stop',{method:'POST'});
+  showToast('Task stopped');renderAll();
 }
 
-async function renderSettings(){
-  document.getElementById('tab-content').innerHTML=`<div class="flex gap-0 border-b border-border mb-4">${['Routing','Control','Notifications','General'].map(t=>`<div class="tab ${t.toLowerCase()===settingsTab?'active':''}" onclick="settingsTab='${t.toLowerCase()}';renderSettingsSub()">${t}</div>`).join('')}</div><div id="settings-sub"></div>`;
-  renderSettingsSub()
+// === SETTINGS ===
+async function loadSettings(){
+  const el=document.getElementById('tab-settings');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
+  el.innerHTML=`<div class="flex gap-0 border-b border-border mb-4" id="settings-subtabs">${['Routing','Control','Notifications','General'].map(t=>`<div class="tab ${t.toLowerCase()===settingsTab?'active':''}" onclick="switchSettingsTab('${t.toLowerCase()}')">${t}</div>`).join('')}</div><div id="settings-content"></div>`;
+  loadSettingsSub();
 }
-
-async function renderSettingsSub(){
-  const st=settingsTab;
-  if(st==='routing'){const d=await api('/api/config');const pri=d?.provider_priority||[];
-    document.getElementById('settings-sub').innerHTML=`<div class="glass p-5 mb-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Provider Priority <span class="text-2xs text-muted">Drag to reorder</span></h3><div class="space-y-1" id="prio-list">${pri.map((a,i)=>`<div class="glass p-3 flex items-center gap-3 cursor-grab" draggable="true"><span class="font-mono text-xs text-muted">⬍</span><span class="font-mono text-sm">${i+1}. ${a}</span></div>`).join('')}</div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveRouting()">Save Priority</button></div>`
-  }else if(st==='control'){
-    document.getElementById('settings-sub').innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Circuit Breaker</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-2xs text-muted block mb-1">Threshold</label><input type="number" value="3" class="input" id="cb-thresh"></div><div><label class="text-2xs text-muted block mb-1">Base Cooldown</label><div class="flex items-center gap-1"><input type="number" value="5" class="input" id="cb-base"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Max Cooldown</label><div class="flex items-center gap-1"><input type="number" value="60" class="input" id="cb-max"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Worktree TTL</label><div class="flex items-center gap-1"><input type="number" value="24" class="input" id="cb-ttl"><span class="text-2xs text-muted">hrs</span></div></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveCircuitBreaker()">Apply</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cooldown Status</h3><div class="space-y-2" id="cooldown-list">Loading...</div><div class="flex gap-2 mt-3"><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Reset All</button><button class="btn btn-ghost text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal</button></div></div></div>`
-  }else if(st==='notifications'){
-    document.getElementById('settings-sub').innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Telegram</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Telegram Bot Setup (7 steps):</b><br>1. Open Telegram, search <code>@BotFather</code><br>2. Send <code>/newbot</code>, follow prompts<br>3. Copy the HTTP API token<br>4. Message your bot with /start<br>5. Open <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code><br>6. Find <code>chat.id</code> in the JSON response<br>7. Paste both values below</span></span></div><div class="space-y-3"><div><label class="text-2xs text-muted block mb-1">Bot Token</label><input class="input" id="tg-token" placeholder="123456789:ABC-DEF..." value=""></div><div><label class="text-2xs text-muted block mb-1">Chat ID</label><input class="input" id="tg-chat" placeholder="-1001234567890" value=""></div><div class="border-t border-border pt-3"><div class="text-2xs text-muted mb-2">Notify me when:</div><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" checked class="accent-green-500 tg-ev" value="task_completed"><span class="text-xs">Task completed</span></label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" checked class="accent-green-500 tg-ev" value="task_failed"><span class="text-xs">Task failed / rate limited</span></label></div><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveTelegramConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestTelegram()">Send Test</button></div></div></div><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Webhooks</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Webhook Setup:</b><br><b>Slack:</b> api.slack.com → Create App → Incoming Webhooks → copy URL<br><b>Discord:</b> Server Settings → Integrations → Webhooks → Create → copy URL</span></span></div><div class="space-y-3"><input class="input" id="wh-url" placeholder="Slack/Discord webhook URL" value=""><div class="border-t border-border pt-3"><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" checked class="accent-green-500 wh-ev" value="task_failed"><span class="text-xs">On task failure</span></label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" checked class="accent-green-500 wh-ev" value="rate_limit"><span class="text-xs">On rate limit</span></label></div><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveWebhookConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestWebhook()">Send Test</button></div></div></div></div>`
+async function loadSettingsSub(){
+  const d=await api('/api/config');if(!d)return;
+  const el=document.getElementById('settings-content');if(!el)return;
+  if(settingsTab==='routing'){
+    const pri=d.provider_priority||[];
+    el.innerHTML=`<div class="glass p-5 mb-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Provider Priority <span class="text-2xs text-muted">&#8693; Drag to reorder</span></h3><div class="space-y-1" id="prio-list">${pri.map((a,i)=>`<div class="flex items-center gap-3 p-2 rounded cursor-grab" draggable="true" style="border:1px solid ${i===0?'rgba(34,197,94,.2)':'transparent'};background:${i===0?'rgba(34,197,94,.04)':'transparent'}"><span class="text-xs text-muted">&#8693;</span><span class="font-mono text-xs">${i+1}. ${a}</span></div>`).join('')}</div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveRouting()">Save Priority</button></div>`;
+    initDragSort();
+  }else if(settingsTab==='control'){
+    el.innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Circuit Breaker</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-2xs text-muted block mb-1">Threshold</label><input type="number" value="3" class="input" id="cb-thresh"></div><div><label class="text-2xs text-muted block mb-1">Base Cooldown</label><div class="flex items-center gap-1"><input type="number" value="5" class="input" id="cb-base"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Max Cooldown</label><div class="flex items-center gap-1"><input type="number" value="60" class="input" id="cb-max"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Worktree TTL</label><div class="flex items-center gap-1"><input type="number" value="24" class="input" id="cb-ttl"><span class="text-2xs text-muted">hrs</span></div></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveCircuitBreaker()">Apply</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cooldown Status</h3><div class="space-y-2" id="cooldown-list">Loading...</div><div class="flex gap-2 mt-3"><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Reset All</button><button class="btn btn-ghost text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal</button></div></div></div>`;
+    const st=await api('/api/status');const cl=document.getElementById('cooldown-list');
+    if(cl&&st)cl.innerHTML=(st.cooldowns||[]).map(c=>`<div class="flex items-center justify-between"><span class="font-mono text-xs">${c.key}</span><span class="status s-warn">cooldown</span><span class="text-2xs text-danger">${c.remaining_seconds?Math.round(c.remaining_seconds/60)+'m remaining':'active'}</span></div>`).join('')||'<div class="font-mono text-xs text-accent">No active cooldowns</div>';
+  }else if(settingsTab==='notifications'){
+    const cfg=d.notifications||{};const tg=cfg.telegram||{};const wh=cfg.webhooks||{};
+    el.innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Telegram</h3></div><div class="space-y-3"><div><label class="text-2xs text-muted block mb-1">Bot Token</label><input class="input" id="tg-token" placeholder="123456789:ABC-DEF..." value="${tg.bot_token||''}"></div><div><label class="text-2xs text-muted block mb-1">Chat ID</label><input class="input" id="tg-chat" placeholder="-1001234567890" value="${tg.chat_id||''}"></div><div class="border-t border-border pt-3"><div class="text-2xs text-muted mb-2">Notify me when:</div><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="task_completed" ${(tg.events||[]).includes('task_completed')?'checked':''}><span class="text-xs">Task completed</span></label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="task_failed" ${(tg.events||[]).includes('task_failed')?'checked':''}><span class="text-xs">Task failed / rate limited</span></label></div><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveTelegramConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestTelegram()">Send Test</button></div></div></div><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Webhooks</h3></div><div class="space-y-3"><div><label class="text-2xs text-muted block mb-1">Slack/Discord URL</label><input class="input" id="wh-url" placeholder="https://hooks.slack.com/..." value="${wh.slack_url||''}"></div><div class="border-t border-border pt-3"><div class="text-2xs text-muted mb-2">Notify me when:</div><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="task_failed" ${(wh.events||[]).includes('task_failed')?'checked':''}><span class="text-xs">On task failure</span></label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="rate_limit" ${(wh.events||[]).includes('rate_limit')?'checked':''}><span class="text-xs">On rate limit detected</span></label></div><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveWebhookConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestWebhook()">Send Test</button></div></div></div></div>`;
   }else{
-    document.getElementById('settings-sub').innerHTML=`<div class="space-y-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Preferences</h3><div class="grid grid-cols-3 gap-4"><div><label class="text-2xs text-muted block mb-1">Default Model</label><select class="select w-full text-xs" style="padding:6px 10px" id="pref-model"><option>federated-coding</option><option>federated-sonnet</option></select></div><div><label class="text-2xs text-muted block mb-1">Default Workflow</label><select class="select w-full text-xs" style="padding:6px 10px" id="pref-wf"><option>subagent-driven</option><option>brainstorming</option></select></div><div><label class="text-2xs text-muted block mb-1">Auto-Refresh</label><select class="select w-full text-xs" style="padding:6px 10px" id="pref-ref"><option>5s</option><option>10s</option></select></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="savePreferences()">Save Preferences</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Danger Zone</h3><div class="space-y-2"><div class="flex items-center justify-between"><span class="text-xs">Reset all cooldowns</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="autoHeal()">Reset</button></div><div class="flex items-center justify-between"><span class="text-xs">Clear delegation history</span><button class="btn btn-danger text-xs" style="padding:4px 10px" onclick="clearHistory()">Clear</button></div><div class="flex items-center justify-between"><span class="text-xs">Reset learned rankings</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="resetRankings()">Reset</button></div></div></div></div>`
+    el.innerHTML=`<div class="space-y-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Preferences</h3><div class="grid grid-cols-3 gap-4"><div><label class="text-2xs text-muted block mb-1">Default Model</label><select class="select w-full text-xs" id="pref-model"><option>federated-coding</option><option>federated-sonnet</option></select></div><div><label class="text-2xs text-muted block mb-1">Default Workflow</label><select class="select w-full text-xs" id="pref-wf"><option>subagent-driven</option><option>brainstorming</option></select></div><div><label class="text-2xs text-muted block mb-1">Auto-Refresh</label><select class="select w-full text-xs" id="pref-ref"><option>5s</option><option>10s</option></select></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="savePreferences()">Save Preferences</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Danger Zone</h3><div class="space-y-2"><div class="flex items-center justify-between"><span class="text-xs">Reset all cooldowns</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="autoHeal()">Reset</button></div><div class="flex items-center justify-between"><span class="text-xs">Clear delegation history</span><button class="btn btn-danger text-xs" style="padding:4px 10px" onclick="clearHistory()">Clear</button></div><div class="flex items-center justify-between"><span class="text-xs">Reset learned rankings</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="resetRankings()">Reset</button></div></div></div></div>`;
   }
 }
 
-// === TAB SWITCH ===
-function switchTab(t){activeTab=t;document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});if(t==='live')renderLive();if(t==='logs'){renderLogs();_logEntries=[]}if(t==='history')renderHistory();if(t==='analytics')renderAnalytics();if(t==='compare')renderCompare();if(t==='queue')renderQueue();if(t==='exec')renderExec();if(t==='settings')renderSettings();if(window.tailwind)tailwind.refresh()}
+// === SETTINGS ACTIONS ===
+async function saveRouting(){
+  const pri=[];document.querySelectorAll('#prio-list .font-mono.text-xs').forEach(e=>{pri.push(e.textContent.replace(/^\d+\.\s*/,''));});
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});
+  showToast(r?'Priority saved!':'Save failed',r?'success':'error');
+}
+async function saveCircuitBreaker(){
+  const cfg={failure_threshold:parseInt(document.getElementById('cb-thresh')?.value)||3,base_minutes:parseInt(document.getElementById('cb-base')?.value)||5,max_minutes:parseInt(document.getElementById('cb-max')?.value)||60,worktree_ttl:parseInt(document.getElementById('cb-ttl')?.value)||24};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:cfg})});
+  showToast(r?'Saved!':'Failed',r?'success':'error');
+}
+async function saveTelegramConfig(){
+  const ev=[];document.querySelectorAll('.tg-ev:checked').forEach(c=>ev.push(c.value));
+  const cfg={telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:ev},webhooks:((await api('/api/config'))||{}).notifications?.webhooks||{slack_url:'',events:[]}};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});
+  showToast(r?'Telegram config saved!':'Save failed',r?'success':'error');
+}
+async function saveWebhookConfig(){
+  const ev=[];document.querySelectorAll('.wh-ev:checked').forEach(c=>ev.push(c.value));
+  const cfg={webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:ev},telegram:((await api('/api/config'))||{}).notifications?.telegram||{bot_token:'',chat_id:'',events:[]}};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});
+  showToast(r?'Webhook config saved!':'Save failed',r?'success':'error');
+}
+async function sendTestTelegram(){
+  const tok=document.getElementById('tg-token')?.value;const cid=document.getElementById('tg-chat')?.value;
+  if(!tok||!cid){showToast('Enter bot token and chat ID','error');return;}
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_telegram',token:tok,chat_id:cid})});
+  showToast(r?'Test sent!':'Send failed',r?'success':'error');
+}
+async function sendTestWebhook(){
+  const url=document.getElementById('wh-url')?.value;if(!url){showToast('Enter a webhook URL','error');return;}
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});
+  showToast(r?'Test sent!':'Send failed',r?'success':'error');
+}
+async function savePreferences(){
+  const s=document.querySelectorAll('#set-general select');
+  const p={default_model:s[0]?.value,default_workflow:s[1]?.value,auto_refresh:s[2]?.value};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'preferences',prefs:p})});
+  showToast(r?'Preferences saved!':'Save failed',r?'success':'error');
+}
+async function autoHeal(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'auto_heal'})});
+  showToast(r?'Cooldowns reset':'Reset failed',r?'success':'error');renderAll();
+}
+async function clearHistory(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'clear_history'})});
+  showToast(r?'History cleared':'Failed',r?'success':'error');
+}
+async function resetRankings(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});
+  showToast(r?'Rankings reset':'Failed',r?'success':'error');
+}
 
-// === ACTIONS ===
-async function execTask(){const t=document.getElementById('exec-task');if(!t?.value)return switchTab('exec');const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t.value,model:document.getElementById('exec-model')?.value||'federated-coding',workflow:document.getElementById('exec-wf')?.value||'subagent-driven',from_agent:document.getElementById('exec-from')?.value||'',stream:document.getElementById('exec-stream')?.checked||false,no_worktree:document.getElementById('exec-no-wt')?.checked||false})});if(r){liveTaskId=r.task_id;switchTab('live');renderAll();showToast('Task started')}}
-async function stopTask(id){await api('/api/tasks/'+(id||liveTaskId||'')+'/stop',{method:'POST'});showToast('Task stopped');renderAll()}
-async function autoHeal(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'auto_heal'})});renderAll();showToast('Cooldowns reset')}
-async function execFromQueue(task,model){const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});if(r){liveTaskId=r.task_id;switchTab('live');renderAll()}}
-async function startQueuedFromAPI(idx){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'start_queued',index:idx})});switchTab('queue')}
-async function addScheduled(){const t=prompt('Task description:');if(!t)return;const m=prompt('Model:','federated-coding')||'federated-coding';const c=prompt('Cron (e.g. 0 2 * * *):','')||'';await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:c})});switchTab('queue')}
-async function addPending(){const t=prompt('Task description:');if(!t)return;await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});switchTab('queue')}
-async function saveRouting(){const pri=[];document.querySelectorAll('#prio-list .font-mono.text-sm').forEach(e=>{pri.push(e.textContent.replace(/^\d+\.\s*/,''))});await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});alert('Saved')}
-async function saveCircuitBreaker(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:{failure_threshold:+document.getElementById('cb-thresh')?.value||3,base_minutes:+document.getElementById('cb-base')?.value||5,max_minutes:+document.getElementById('cb-max')?.value||60,worktree_ttl:+document.getElementById('cb-ttl')?.value||24}})});alert('Saved')}
-async function saveTelegramConfig(){const ev=[];document.querySelectorAll('.tg-ev:checked').forEach(c=>ev.push(c.value));await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:{telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:ev},webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:[]}}})});alert('Saved')}
-async function saveWebhookConfig(){const ev=[];document.querySelectorAll('.wh-ev:checked').forEach(c=>ev.push(c.value));await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:{webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:ev},telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:[]}}})});alert('Saved')}
-async function sendTestTelegram(){const tok=document.getElementById('tg-token')?.value;const cid=document.getElementById('tg-chat')?.value;if(!tok||!cid)return alert('Enter bot token and chat ID');await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_telegram',token:tok,chat_id:cid})});alert('Test sent')}
-async function sendTestWebhook(){const url=document.getElementById('wh-url')?.value;if(!url)return alert('Enter webhook URL');await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});alert('Test sent')}
-async function savePreferences(){alert('Saved')}
-async function clearHistory(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'clear_history'})});alert('History cleared')}
-async function resetRankings(){await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});alert('Rankings reset')}
-async function switchProject(path){await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});renderAll()}
-async function loadProjects(){const d=await api('/api/projects');if(!d)return;const sel=document.getElementById('project-switcher');if(sel)sel.innerHTML=d.projects.map(p=>`<option value="${p.path}" ${p.path===d.current?'selected':''}>📁 ${p.name}</option>`).join('')}
-async function rerunExec(){switchTab('exec')}
+// === DRAG AND DROP ===
+function initDragSort(){
+  const container=document.getElementById('prio-list');if(!container)return;
+  let dragged=null;
+  container.querySelectorAll('[draggable="true"]').forEach(item=>{
+    item.addEventListener('dragstart',e=>{dragged=item;item.style.opacity='0.4';});
+    item.addEventListener('dragend',e=>{item.style.opacity='1';dragged=null;});
+    item.addEventListener('dragover',e=>{e.preventDefault();});
+    item.addEventListener('drop',e=>{
+      e.preventDefault();if(!dragged||dragged===item)return;
+      const rect=item.getBoundingClientRect();const before=e.clientY<rect.top+rect.height/2;
+      container.insertBefore(dragged,before?item:item.nextSibling);
+      updatePriorityNumbers();
+    });
+  });
+}
+function updatePriorityNumbers(){
+  document.querySelectorAll('#prio-list .font-mono.text-xs').forEach((el,i)=>{
+    el.textContent=`${i+1}. ${el.textContent.replace(/^\d+\.\s*/,'')}`;
+  });
+}
+
+// === AGENT MODAL ===
 async function openAgentModal(name){
   const d=await api('/api/agents/'+name);if(!d?.models)return;
-  const m=document.createElement('div');m.className='modal-overlay';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center';
-  m.innerHTML=`<div class="glass" style="padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">${name} — Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').remove()">×</button></div><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="text-left py-2 px-3">Model</th><th class="text-left py-2 px-3">Capabilities</th><th class="text-center py-2 px-3">Dels</th><th class="text-center py-2 px-3">Success</th></tr></thead><tbody>${d.models.map(m=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">${m.id}</td><td class="py-2 px-3">${(m.capabilities||[]).map(c=>`<span class="status s-info">${c}</span>`).join(' ')}</td><td class="py-2 px-3 text-center font-mono">${m.total_dels}</td><td class="py-2 px-3 text-center font-mono" style="color:${m.success_rate>0.8?'#22C55E':'#F59E0B'}">${Math.round(m.success_rate*100)}%</td></tr>`).join('')}</tbody></table></div>`;
-  m.addEventListener('click',e=>{if(e.target===m)m.remove()});document.body.appendChild(m)
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`<div class="modal" style="padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">${name} &#8212; Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').remove()">&times;</button></div><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-left">Capabilities</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead><tbody>${d.models.map(m=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">${m.id}</td><td class="py-2 px-3">${(m.capabilities||[]).map(c=>`<span class="status s-info">${c}</span>`).join(' ')}</td><td class="py-2 px-3 text-center font-mono">${m.total_dels}</td><td class="py-2 px-3 text-center font-mono text-${m.success_rate>0.8?'accent':m.success_rate>0.5?'warn':'danger'}">${Math.round(m.success_rate*100)}%</td></tr>`).join('')}</tbody></table></div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
 }
-function showToast(msg){const p=document.querySelector('.toast-panel');if(!p)return;const d=document.createElement('div');d.className='glass p-3 flex items-center gap-3';d.style.cssText='animation:slideIn .3s ease;font-family:monospace;font-size:11px';d.innerHTML=`<span class="pulse-dot online"></span>${msg}<span style="cursor:pointer;margin-left:12px;font-size:14px" onclick="this.parentElement.remove()">×</span>`;p.appendChild(d);setTimeout(()=>d.remove(),8000)}
-function exportText(type){const c=document.getElementById('tab-content')?.textContent||'';const b=new Blob([c],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`delegator-${type}.txt`;a.click()}
-function exportCSV(){exportText('analytics')}
+
+// === KEYBOARD ===
+document.addEventListener('keydown',function(e){
+  if(e.target.closest('input,select,textarea'))return;
+  const m={l:'live',o:'logs',h:'history',a:'analytics',c:'compare',q:'queue',e:'exec',s:'settings'};
+  if(m[e.key]&&!e.ctrlKey&&!e.metaKey)switchTab(m[e.key]);
+  if(e.key>='1'&&e.key<='3'){const idx=parseInt(e.key)-1;const tasks=document.querySelectorAll('#task-cards > div');if(tasks[idx])tasks[idx].click();}
+  if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();switchTab('exec');setTimeout(()=>document.getElementById('exec-task')?.focus(),200);}
+  if(e.key==='?'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('shortcuts-modal')?.classList.toggle('hidden');}
+  if(e.key==='Escape'){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));}
+});
 
 // === INIT ===
 (async function(){
   document.getElementById('tab-bar').innerHTML=TABS.map(t=>`<div class="tab ${t===activeTab?'active':''}" onclick="switchTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('');
-  await loadProjects();await renderAll();switchTab('live');if(window.tailwind)tailwind.refresh();
-  setInterval(()=>{renderAll();if(window.tailwind)tailwind.refresh()},5000);setInterval(()=>{if(activeTab==='logs')_logEntries=[];renderLogs();if(window.tailwind)tailwind.refresh()},8000);setInterval(()=>{if(activeTab==='live'&&liveTaskId)loadLiveOutput()},4000);
+  await loadProjects();await renderAll();switchTab('live');
+  setInterval(renderAll,5000);
+  setInterval(()=>{if(activeTab==='logs'){_logEntries=[];loadLogs();}},8000);
+  setInterval(()=>{if(activeTab==='live'&&liveTaskId)loadLiveOutput();},4000);
 })();
-document.addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea'))return;const m={'l':'live','o':'logs','h':'history','a':'analytics','c':'compare','q':'queue','e':'exec','s':'settings'};if(m[e.key])switchTab(m[e.key]);if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus()}if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();switchTab('exec');setTimeout(()=>document.getElementById('exec-task')?.focus(),200)}if(e.key==='?'){e.preventDefault();showToast('Keys: L Live O Logs H History A Analytics C Compare Q Queue E Exec S Settings · 1-3 Tasks · F7 Project · ⌘K Exec · Esc Close')}})
 </script>
 </body>
 </html>
