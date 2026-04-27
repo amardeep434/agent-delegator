@@ -12,6 +12,7 @@ from delegator.resolver import resolve_logical_model, resolve_model, build_cli_c
 from delegator.cooldowns import is_cooled_down, record_failure, record_success
 from delegator.handoff import write_handoff
 from delegator.metrics import record_delegation
+from delegator.optimizer import get_rankings
 
 
 def _check_rate_limit(output: str, registry: dict) -> bool:
@@ -90,6 +91,18 @@ def execute(request: DelegationRequest, project_root: str | None = None) -> Dele
 
     if not logical_providers:
         logical_providers = [f"{delegate_agent}:{model_name}"]
+
+    rankings = get_rankings()
+    if rankings:
+        scored = []
+        for pk in logical_providers:
+            parts = pk.split(":", 1)
+            if len(parts) == 2:
+                agent_key = parts[0]
+                score = rankings.get("rankings", {}).get(agent_key, {}).get("score", 0.0)
+                scored.append((pk, score))
+        scored.sort(key=lambda x: x[1], reverse=True)
+        logical_providers = [s[0] for s in scored]
 
     project = project_root or os.getcwd()
     worktree = str(Path(project))
