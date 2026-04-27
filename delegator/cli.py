@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 from delegator.models import DelegationRequest
 from delegator.executor import execute
 from delegator.registry import load_registry
@@ -125,6 +126,42 @@ def cmd_metrics(args):
         print(f"  [{status}] {d.get('to_agent','?')}:{d.get('model','?')} - {d.get('workflow','?')}/{d.get('task_type','?')}")
 
 
+def cmd_init(args):
+    config_path = Path(args.project or os.getcwd()) / ".delegator.json"
+    if config_path.exists():
+        print(f"Config already exists at {config_path}")
+        return
+    template = {
+        "preferred_models": {
+            "implementation": "federated-coding",
+            "code_review": "claude:claude-sonnet-4-6"
+        },
+        "provider_priority": ["claude", "opencode", "copilot"],
+        "worktree_ttl_hours": 24,
+        "cooldown_minutes": 5
+    }
+    config_path.write_text(json.dumps(template, indent=2) + "\n")
+    print(f"Created {config_path}")
+
+
+def cmd_config(args):
+    config_path = Path(args.project or os.getcwd()) / ".delegator.json"
+    if args.key:
+        with open(config_path) as f:
+            cfg = json.load(f)
+        if args.value:
+            cfg[args.key] = args.value
+            config_path.write_text(json.dumps(cfg, indent=2) + "\n")
+            print(f"Set {args.key} = {args.value}")
+        else:
+            print(f"{args.key}: {cfg.get(args.key)}")
+    else:
+        if config_path.exists():
+            print(config_path.read_text())
+        else:
+            print("No .delegator.json in this project. Run 'delegator init'.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="delegator - Agent-agnostic AI CLI delegation")
     sub = parser.add_subparsers(dest="command")
@@ -171,6 +208,16 @@ def main():
     p_metrics.add_argument("--days", type=int, default=7)
     p_metrics.add_argument("--limit", type=int, default=20)
     p_metrics.set_defaults(func=cmd_metrics)
+
+    p_init = sub.add_parser("init", help="Initialize .delegator.json")
+    p_init.add_argument("--project", default=None)
+    p_init.set_defaults(func=cmd_init)
+
+    p_config = sub.add_parser("config", help="Get/set configuration")
+    p_config.add_argument("key", nargs="?", default=None, metavar="key")
+    p_config.add_argument("value", nargs="?", default=None, metavar="value")
+    p_config.add_argument("--project", default=None)
+    p_config.set_defaults(func=cmd_config)
 
     args = parser.parse_args()
     if hasattr(args, "func"):
