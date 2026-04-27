@@ -649,7 +649,7 @@ async function refreshAll(){
 
   // 1. Metrics row — find all .glass cards in the metrics grid
   const mc=document.querySelector('.grid-cols-8,.grid.grid-cols-8');
-  if(mc){const cards=mc.querySelectorAll('.glass');const vals=[agents.length,tasks.length,d.recent_dels,Math.round((d.success_rate||0)*100)+'%',cds.length,d.pending_queue||0,d.scheduled||0,''];cards.forEach((c,i)=>{if(i<vals.length){const v=c.querySelector('.font-bold');if(v)v.textContent=vals[i]}})}
+  if(mc){const totalCost=agents.reduce((s,a)=>(s+(a.est_cost||0)),0);const cards=mc.querySelectorAll('.glass');const vals=[agents.length,tasks.length,d.recent_dels,Math.round((d.success_rate||0)*100)+'%',cds.length,d.pending_queue||0,d.scheduled||0,'$'+totalCost.toFixed(2)];cards.forEach((c,i)=>{if(i<vals.length){const v=c.querySelector('.font-bold');if(v)v.textContent=vals[i]}})}
 
   // 2. Agent cards in left rail  
   agents.forEach(a=>{
@@ -692,6 +692,20 @@ async function refreshAll(){
     const list=sc.querySelector('.space-y-2');
     if(list)list.innerHTML=cds.map(c=>`<div class="flex items-center justify-between"><span class="font-mono text-xs">${c.key}</span><span class="status s-rate">cooldown</span><span class="text-2xs text-danger">${c.cooldown_until||'active'}</span></div>`).join('');
   }
+
+  // 6. Toast on task count changes
+  if(tasks.length>_prevTaskCount)showToast(`${tasks.length-_prevTaskCount} new task(s) started`,'info');
+  else if(tasks.length<_prevTaskCount)showToast('Task completed','success');
+  _prevTaskCount=tasks.length;
+
+  // 7. Update active task timers
+  tasks.forEach((t,i)=>{
+    const bCards=banner?banner.querySelectorAll('.glass-sel,.glass.p-3'):null;
+    if(bCards&&bCards[i]){
+      const timeEl=bCards[i].querySelector('.text-2xs.font-mono,.text-2xs.text-muted.font-mono');
+      if(timeEl&&t.started_at){const elapsed=Math.round(Date.now()/1000-t.started_at);timeEl.textContent=elapsed+'s'}
+    }
+  });
 }
 
 // === Tab data loaders ===
@@ -820,17 +834,17 @@ async function rerunTask(){execTask()}
 function copyOutput(){const tb=document.querySelector('#tab-live .t-body');if(tb){navigator.clipboard.writeText(tb.textContent);alert('Copied!')}}
 
 // Logs filters - loadLogs already handles data, filters re-trigger it
-function filterLogs(){loadLogs()}
-function exportLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb){const blob=new Blob([tb.textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-logs.txt';a.click();alert('Logs exported!')}}
-function clearLogs(){const tb=document.querySelector('#tab-logs .t-body');if(tb)tb.innerHTML='';}
+function filterLogs(){const ag=document.querySelector('#tab-logs select')?.value;const lv=document.querySelectorAll('#tab-logs select')[1]?.value;loadLogsFiltered(ag,lv)}
+async function loadLogsFiltered(agent,level){const d=await api('/api/logs?limit=200');if(!d)return;let entries=d.entries;if(agent&&agent!=='All agents')entries=entries.filter(e=>e.agent===agent);if(level&&level!=='All levels')entries=entries.filter(e=>e.level===level);const stream=document.querySelector('#tab-logs .t-body');if(!stream)return;stream.innerHTML=entries.map(e=>`<div class="flex items-start gap-2 py-1"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.timestamp||'—'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${e.agent||'—'}</span><span class="text-2xs text-info font-mono">${(e.task_id||'').slice(0,8)}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':'#3B82F6'}">${e.level}</span><span class="text-xs text-text">${e.message||''}</span></div>`).join('')}
+function filterHistory(){const ag=document.querySelector('#tab-history select')?.value;loadHistory()}
 
-// History filters + export
-function filterHistory(){loadHistory()}
-function exportHistory(){const h=document.querySelector('#tab-history');if(h){const blob=new Blob([h.textContent],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-history.csv';a.click();alert('History exported!')}}
+// Toast notifications
+function showToast(msg,type){const panel=document.querySelector('.toast-panel');if(!panel)return;const toast=document.createElement('div');toast.className='glass p-3 flex items-center gap-3';toast.style.cssText=type==='info'?'border-color:rgba(59,130,246,.3);max-width:340px;animation:slideIn .3s ease':'border-color:rgba(34,197,94,.3);max-width:340px;animation:slideIn .3s ease';toast.innerHTML=`<div class="pulse-dot ${type==='info'?'online':'online'}"></div><div class="text-xs font-mono">${msg}</div><button class="text-muted ml-2" style="cursor:pointer;font-size:14px" onclick="this.closest('.glass').remove()">×</button>`;panel.appendChild(toast);setTimeout(()=>toast.remove(),8000)}
+let _prevTaskCount=0;
 
-// Analytics export
-function exportAnalyticsCSV(){alert('Analytics CSV downloaded')}
-function exportAnalyticsPDF(){alert('Analytics PDF generated')}
+// Analytics export (real CSV)
+function exportAnalyticsCSV(){const els=document.querySelectorAll('#tab-analytics .text-xs.font-mono');const data=[];els.forEach(el=>data.push(el.textContent));const blob=new Blob([data.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-analytics.csv';a.click()}
+function exportAnalyticsPDF(){exportAnalyticsCSV();alert('Analytics exported as CSV. PDF generation requires additional dependencies.')}
 
 // Auto-scroll toggle
 function toggleAutoScroll(cb){localStorage.setItem('delegator-autoscroll',cb.checked?'1':'0')}
