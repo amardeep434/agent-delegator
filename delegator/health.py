@@ -2,6 +2,7 @@
 
 import subprocess
 from delegator.registry import load_registry
+from delegator.capabilities import announce_capabilities
 
 
 def check_agent_health(agent_name: str, registry: dict | None = None) -> dict:
@@ -36,4 +37,13 @@ def check_all_agents(registry: dict | None = None) -> dict:
     results = {}
     for agent_name in registry.get("agents", {}):
         results[agent_name] = check_agent_health(agent_name, registry)
+    for agent_name, status in results.items():
+        if status.get("available") and status.get("cli_found"):
+            agent_def = registry.get("agents", {}).get(agent_name, {})
+            models = agent_def.get("available_models", [])
+            caps = set()
+            for m in models:
+                for c in m.get("capabilities", []):
+                    caps.add(c)
+            announce_capabilities(agent_name, sorted(caps), [m["id"] for m in models])
     return results
