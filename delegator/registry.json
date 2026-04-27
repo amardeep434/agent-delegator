@@ -25,7 +25,6 @@
     "copilot": {
       "name": "GitHub Copilot CLI",
       "available_models": [
-        {"id": "claude-sonnet-4.6", "display": "Sonnet 4.6", "capabilities": ["coding", "reasoning"]},
         {"id": "claude-haiku-4.5", "display": "Haiku 4.5", "capabilities": ["coding", "fast"]},
         {"id": "gpt-5.4", "display": "GPT 5.4", "capabilities": ["coding", "reasoning"]},
         {"id": "gpt-5.2", "display": "GPT 5.2", "capabilities": ["coding"]},
@@ -56,7 +55,7 @@
   "logical_models": {
     "federated-sonnet": {
       "display": "Any Sonnet",
-      "providers": ["claude:claude-sonnet-4-6", "copilot:claude-sonnet-4.6"]
+      "providers": ["claude:claude-sonnet-4-6"]
     },
     "federated-coding": {
       "display": "Any Coding Model",
