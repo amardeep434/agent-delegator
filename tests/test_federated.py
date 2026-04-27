@@ -52,7 +52,7 @@ def test_fallback_order_with_rankings():
     rankings = get_rankings()
     assert rankings == test_rankings
 
-    providers = ["claude:claude-sonnet-4-6", "opencode:anthropic/claude-sonnet-4-6", "copilot:claude-sonnet-4-6"]
+    providers = ["claude:claude-sonnet-4-6", "opencode:opencode-go/deepseek-v4-pro", "copilot:claude-sonnet-4-6"]
     scored = []
     for pk in providers:
         parts = pk.split(":", 1)
@@ -62,6 +62,6 @@ def test_fallback_order_with_rankings():
     scored.sort(key=lambda x: x[1], reverse=True)
     sorted_providers = [s[0] for s in scored]
 
-    assert sorted_providers[0] == "opencode:anthropic/claude-sonnet-4-6"
+    assert sorted_providers[0] == "opencode:opencode-go/deepseek-v4-pro"
     assert sorted_providers[1] == "copilot:claude-sonnet-4-6"
     assert sorted_providers[2] == "claude:claude-sonnet-4-6"

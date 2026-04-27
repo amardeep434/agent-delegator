@@ -16,12 +16,10 @@ def normalize_model(model: str, agent: str, registry: dict) -> str:
         return model
 
     shorthand_map = {
-        "sonnet": {"claude": "claude-sonnet-4-6", "opencode": "anthropic/claude-sonnet-4-6"},
-        "haiku": {"claude": "claude-haiku-4-5", "opencode": "anthropic/claude-haiku-4-5"},
-        "sonnet-4-6": {"claude": "claude-sonnet-4-6", "opencode": "anthropic/claude-sonnet-4-6"},
-        "haiku-4-5": {"claude": "claude-haiku-4-5", "opencode": "anthropic/claude-haiku-4-5"},
-        "claude-sonnet-4-6": {"opencode": "anthropic/claude-sonnet-4-6"},
-        "claude-haiku-4-5": {"opencode": "anthropic/claude-haiku-4-5"},
+        "sonnet": {"claude": "claude-sonnet-4-6"},
+        "haiku": {"claude": "claude-haiku-4-5"},
+        "sonnet-4-6": {"claude": "claude-sonnet-4-6"},
+        "haiku-4-5": {"claude": "claude-haiku-4-5"},
         "minimax": {"opencode": "opencode-go/minimax-m2.7"},
         "deepseek": {"opencode": "opencode-go/deepseek-v4-pro"},
         "deepseek-flash": {"opencode": "opencode-go/deepseek-v4-flash"},
