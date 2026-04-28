@@ -1,13 +1,22 @@
+# Python
 __pycache__/
 *.pyc
-.pytest_cache/
-.delegation/
-agent_*.log
-HANDOFF.md
-.omc/
+*.pyo
 *.egg-info/
+*.egg
+*.whl
+build/
+dist/
+.venv/
+venv/
 
-# IDE/agent config dirs (never commit)
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE / Agent Config (never commit)
 .agent/
 .claude/
 .codebuddy/
@@ -22,10 +31,37 @@ HANDOFF.md
 .trae/
 .windsurf/
 
-# Runtime state (never commit)
+# Runtime State (never commit)
 *.db
+*.db-journal
 cooldowns.json
 capabilities.json
 provider_rankings.json
+.delegation/
+agent_*.log
+
+# Local Config (never commit)
+.agent-delegator.json
+
+# Session / Planning Artifacts (never commit)
+SESSION_HANDOFF.md
+handoff-template.md
+*.backup
+*.bak
+.version
+
+# Dev Tools / Mockups (never commit)
+mockups/
+sort_by_date.py
+
+# Build Artifacts
+build/
+dist/
+*.egg-info/
+MANIFEST
+.github/prompts/
+HANDOFF.md
+docs/
+ARCHITECTURE.md
+.omc/
 .delegator.json
-.github/

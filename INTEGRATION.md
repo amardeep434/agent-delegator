@@ -1,19 +1,19 @@
-# Integrating delegator into AI Agent Workflows
+# Integrating agent-delegator into AI Agent Workflows
 
 ## Overview
 
-`delegator` is called via subprocess by any AI agent. It handles routing, failover, and worktree isolation transparently.
+`agent-delegator` is called via subprocess by any AI agent. It handles routing, failover, and worktree isolation transparently.
 
 ## From Claude CLI
 
 ```bash
-delegator exec --model federated-coding --workflow subagent-driven --from-agent claude --task "Add unit tests for OrderRepository"
+agent-delegator exec --model federated-coding --workflow subagent-driven --from-agent claude --task "Add unit tests for OrderRepository"
 ```
 
 ## From OpenCode
 
 ```bash
-delegator exec --model federated-coding --task "Add unit tests for OrderRepository"
+agent-delegator exec --model federated-coding --task "Add unit tests for OrderRepository"
 ```
 
 ## From Any Custom Agent
@@ -22,7 +22,7 @@ delegator exec --model federated-coding --task "Add unit tests for OrderReposito
 import subprocess, json
 
 result = subprocess.run(
-    ["delegator", "exec",
+    ["agent-delegator", "exec",
      "--model", "federated-sonnet",
      "--task", "Fix the login bug",
      "--from-agent", "claude"],
@@ -46,7 +46,7 @@ Logical models resolve to multiple providers with automatic failover:
 
 ## Self-Healing Flow
 
-1. `delegator exec` resolves route
+1. `agent-delegator exec` resolves route
 2. Consults learned rankings from SQLite metrics
 3. Tries providers in ranked order
 4. On rate-limit: applies cooldown, generates HANDOFF.md, switches to next provider
@@ -56,5 +56,5 @@ Logical models resolve to multiple providers with automatic failover:
 
 Environment variable override:
 ```bash
-DELEGATOR_PROVIDER_PRIORITY="opencode,claude,copilot" delegator exec ...
+AGENT_DELEGATOR_PROVIDER_PRIORITY="opencode,claude,copilot" agent-delegator exec ...
 ```

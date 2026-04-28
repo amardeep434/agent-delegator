@@ -1,9 +1,9 @@
 """Capability announcements and discovery for agents."""
 
 from datetime import datetime, timezone
-from delegator.state import capabilities_path
-from delegator.utils import load_json, save_json
-from delegator.registry import load_registry
+from agent_delegator.state import capabilities_path
+from agent_delegator.utils import load_json, save_json
+from agent_delegator.registry import load_registry
 
 
 def announce_capabilities(agent_name: str, capabilities: list[str], models: list[str]) -> None:

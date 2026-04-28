@@ -1,13 +1,13 @@
-"""End-to-end integration tests for delegator."""
+"""End-to-end integration tests for agent-delegator."""
 import sys, os, tempfile
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.registry import load_registry
-from delegator.router import resolve_route
-from delegator.resolver import resolve_logical_model, normalize_model, build_cli_command
-from delegator.metrics import record_delegation, get_success_rate, get_recent_delegations, clear_delegations
-from delegator.optimizer import optimize_rankings, get_rankings
+from agent_delegator.registry import load_registry
+from agent_delegator.router import resolve_route
+from agent_delegator.resolver import resolve_logical_model, normalize_model, build_cli_command
+from agent_delegator.metrics import record_delegation, get_success_rate, get_recent_delegations, clear_delegations
+from agent_delegator.optimizer import optimize_rankings, get_rankings
 
 
 def test_full_exec_to_metrics_to_optimize_cycle():

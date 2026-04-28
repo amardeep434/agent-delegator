@@ -2,7 +2,7 @@
 
 import os
 from pathlib import Path
-from delegator.utils import load_json, save_json, deep_merge
+from agent_delegator.utils import load_json, save_json, deep_merge
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _DEFAULT_REGISTRY = _SCRIPT_DIR / "registry.json"
@@ -19,12 +19,12 @@ def load_registry(project_root: str | None = None, force_reload: bool = False) -
     registry = load_json(str(_DEFAULT_REGISTRY))
 
     if project_root:
-        project_config = Path(project_root) / ".delegator.json"
+        project_config = Path(project_root) / ".agent-delegator.json"
         if project_config.exists():
             override = load_json(str(project_config))
             registry = deep_merge(registry, override)
 
-    env_priority = os.environ.get("DELEGATOR_PROVIDER_PRIORITY", "")
+    env_priority = os.environ.get("AGENT_DELEGATOR_PROVIDER_PRIORITY", "")
     if env_priority:
         registry["provider_priority"] = [p.strip() for p in env_priority.split(",")]
 

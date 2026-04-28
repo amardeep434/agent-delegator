@@ -8,14 +8,14 @@ import sys
 import threading
 import time
 from pathlib import Path
-from delegator.models import DelegationRequest, DelegationResult
-from delegator.registry import load_registry
-from delegator.router import resolve_route
-from delegator.resolver import resolve_logical_model, resolve_model, build_cli_command
-from delegator.cooldowns import is_cooled_down, record_failure, record_success
-from delegator.handoff import write_handoff
-from delegator.metrics import record_delegation
-from delegator.optimizer import get_rankings
+from agent_delegator.models import DelegationRequest, DelegationResult
+from agent_delegator.registry import load_registry
+from agent_delegator.router import resolve_route
+from agent_delegator.resolver import resolve_logical_model, resolve_model, build_cli_command
+from agent_delegator.cooldowns import is_cooled_down, record_failure, record_success
+from agent_delegator.handoff import write_handoff
+from agent_delegator.metrics import record_delegation
+from agent_delegator.optimizer import get_rankings
 
 
 def _check_rate_limit(output: str, registry: dict) -> bool:

@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
-from delegator.state import worktrees_dir
+from agent_delegator.state import worktrees_dir
 
 
 def cleanup_stale_worktrees(project_root: str, ttl_hours: int = 24) -> int:

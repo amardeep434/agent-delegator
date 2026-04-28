@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>delegator — Mission Control</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>tailwind.config={theme:{extend:{colors:{bg:'#020617',surface:'#0F172A',border:'#1E293B',accent:'#22C55E',accentdim:'#166534',text:'#F8FAFC',muted:'#94A3B8',danger:'#EF4444',warn:'#F59E0B',info:'#3B82F6',purple:'#8B5CF6',pink:'#EC4899',cyan:'#06B6D4'},fontFamily:{mono:['JetBrains Mono','monospace'],sans:['Fira Sans','sans-serif']}}}}</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#020617;font-family:'Fira Sans',sans-serif;color:#F8FAFC;overflow-x:hidden;padding-bottom:40px}
+.pulse-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.pulse-dot.online{background:#22C55E;box-shadow:0 0 8px #22C55E;animation:pulse 2s infinite}
+.pulse-dot.warning{background:#F59E0B;box-shadow:0 0 6px #F59E0B;animation:pulse 1.5s infinite}
+.pulse-dot.danger{background:#EF4444;box-shadow:0 0 6px #EF4444}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.glass{background:#0F172A;border:1px solid #1E293B;border-radius:10px;transition:border-color 200ms}
+.glass:hover{border-color:#334155}
+.glass-sel{border-color:#22C55E!important;background:rgba(34,197,94,.06)!important}
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 16px;border-radius:6px;cursor:pointer;transition:all 150ms;border:none;font-weight:600}
+.btn-pri{background:#22C55E;color:#020617}.btn-pri:hover{background:#16A34A;box-shadow:0 0 16px rgba(34,197,94,.3)}
+.btn-danger{background:transparent;color:#EF4444;border:1px solid rgba(239,68,68,.3)}.btn-danger:hover{background:rgba(239,68,68,.1);border-color:#EF4444}
+.btn-ghost{background:transparent;color:#94A3B8;border:1px solid #1E293B}.btn-ghost:hover{color:#F8FAFC;border-color:#334155}
+.btn-info{background:transparent;color:#3B82F6;border:1px solid rgba(59,130,246,.3)}.btn-info:hover{background:rgba(59,130,246,.1)}
+.status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.s-ok{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3)}
+.s-fail{background:rgba(239,68,68,.15);color:#EF4444;border:1px solid rgba(239,68,68,.3)}
+.s-rate{background:rgba(245,158,11,.15);color:#F59E0B;border:1px solid rgba(245,158,11,.3)}
+.s-info{background:rgba(59,130,246,.15);color:#3B82F6;border:1px solid rgba(59,130,246,.3)}
+.s-purple{background:rgba(139,92,246,.15);color:#8B5CF6;border:1px solid rgba(139,92,246,.3)}
+.kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:1px 5px;border-radius:3px;background:#1E293B;border:1px solid #334155;color:#94A3B8}
+.input{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;transition:border-color 200ms;width:100%}
+.input:focus{border-color:#22C55E}
+.select{background:#0F172A;border:1px solid #1E293B;color:#F8FAFC;padding:8px 14px;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;cursor:pointer;transition:border-color 200ms}
+.select:hover{border-color:#22C55E}
+.progress{height:4px;border-radius:2px;background:#1E293B;overflow:hidden}.progress .fill{height:100%;border-radius:2px;transition:width 1s ease}
+.fill-g{background:#22C55E}.fill-y{background:#F59E0B}.fill-r{background:#EF4444}.fill-b{background:#3B82F6}.fill-p{background:#8B5CF6}
+.tab{padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all 200ms;color:#64748B;font-size:13px;font-family:'JetBrains Mono',monospace}
+.tab.active{color:#22C55E;border-bottom-color:#22C55E}.tab:hover{color:#94A3B8}
+.log{font-family:'JetBrains Mono',monospace;font-size:12px;padding:1px 0}
+.log.m{color:#64748B}.log.g{color:#22C55E}.log.y{color:#F59E0B}.log.b{color:#3B82F6}.log.p{color:#8B5CF6}
+.terminal{background:#020617;border:1px solid #1E293B;border-radius:8px;overflow:hidden}
+.t-head{background:#0F172A;padding:8px 14px;display:flex;gap:6px;align-items:center;border-bottom:1px solid #1E293B}
+.t-dot{width:10px;height:10px;border-radius:50%}.t-dot.r{background:#EF4444}.t-dot.y{background:#F59E0B}.t-dot.g{background:#22C55E}
+.t-body{padding:12px 14px;max-height:450px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:12px}
+.typing::after{content:' ▌';animation:blink 1s step-end infinite;color:#22C55E}@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.tooltip-trigger{position:relative;display:inline-flex;align-items:center}
+.tooltip-content{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1E293B;border:1px solid #475569;color:#E2E8F0;padding:10px 14px;border-radius:8px;font-size:11px;line-height:1.6;white-space:normal;z-index:200;max-width:320px;min-width:180px;font-family:'Fira Sans',sans-serif;font-weight:400;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none}
+.tooltip-content b{color:#F8FAFC;font-family:'JetBrains Mono',monospace;font-size:10px}
+.tooltip-content code{color:#86EFAC;font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(34,197,94,.1);padding:1px 4px;border-radius:3px}
+.tooltip-trigger:hover .tooltip-content{display:block}
+#set-notifications .glass{overflow:visible}
+#set-notifications{overflow:visible}
+.info-icon{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(148,163,184,.15);color:#94A3B8;font-size:12px;font-weight:700;cursor:help;transition:all 150ms}
+.info-icon:hover{background:rgba(59,130,246,.2);color:#60A5FA}
+.toast-panel{position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column;gap:8px;max-width:340px}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center}
+.modal{background:#0F172A;border:1px solid #1E293B;border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto}
+.heart{font-size:14px;cursor:pointer;transition:all 200ms;opacity:.4}.heart:hover,.heart.liked{opacity:1;color:#EC4899}
+.bar-group{display:flex;align-items:flex-end;gap:2px;height:80px}
+.bar{width:14px;border-radius:2px 2px 0 0;transition:height .5s ease;min-height:2px}
+.bar.g{background:#22C55E}.bar.r{background:#EF4444}.bar.b{background:#3B82F6}.bar.y{background:#F59E0B}
+body.light{background:#F8FAFC;color:#0F172A}
+body.light .glass{background:#FFFFFF;border-color:#E2E8F0}
+body.light .tab{color:#64748B}body.light .tab.active{color:#059669}
+body.light .terminal{background:#F1F5F9;border-color:#E2E8F0}
+body.light .t-body{background:#F8FAFC}
+body.light .t-head{background:#E2E8F0}
+body.light .input,body.light .select{background:#F8FAFC;border-color:#CBD5E1;color:#0F172A}
+body.light .kbd{background:#E2E8F0;border-color:#CBD5E1;color:#475569}
+body.light .log.m{color:#64748B}body.light .log.g{color:#059669}
+.compare-col{border:2px dashed #1E293B;border-radius:8px;padding:12px;transition:border-color 200ms}
+.compare-col:hover{border-color:#3B82F6}
+.compare-col.running{border-color:#22C55E;border-style:solid;border-width:2px}
+.compare-col.done{border-color:#8B5CF6;border-style:solid}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#020617}::-webkit-scrollbar-thumb{background:#1E293B;border-radius:3px}
+</style>
+</head>
+<body class="min-h-screen p-6">
+<div class="max-w-7xl mx-auto">
+
+<!-- ===== HEADER ===== -->
+<div class="flex items-center justify-between mb-4">
+  <div class="flex items-center gap-4">
+    <h1 class="font-mono text-xl font-bold"><span class="text-accent" style="text-shadow:0 0 14px rgba(34,197,94,.35)">&#9672;</span> delegator</h1>
+    <span class="text-xs text-muted">Mission Control</span>
+    <span class="text-muted text-xs">|</span>
+    <div class="flex items-center gap-2">
+      <select class="select text-xs" style="padding:4px 8px" id="project-switcher" onchange="switchProject(this.value)"></select>
+      <span class="text-xs text-muted">[F7]</span>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button class="text-xs text-muted font-mono hover:text-text" onclick="document.body.classList.toggle('light')">&#9728;/&#127769; Theme</button>
+    <button class="btn btn-info text-xs" style="padding:3px 10px" onclick="autoHeal()">&#129657; Auto-Heal</button>
+    <span class="text-muted text-xs">|</span>
+    <span class="text-xs text-muted font-mono">&#8984;K</span>
+  </div>
+</div>
+
+<!-- ===== TOAST PANEL ===== -->
+<div class="toast-panel"></div>
+
+<!-- ===== ALERT BAR ===== -->
+<div class="glass mb-3 p-3 flex items-center justify-between" id="alert-bar" style="display:none;border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04)">
+  <div class="flex items-center gap-3 flex-wrap" id="alert-msg"></div>
+</div>
+
+<!-- ===== METRICS ===== -->
+<div class="grid grid-cols-8 gap-2 mb-3" id="metrics-row"></div>
+
+<!-- ===== ACTIVE TASKS BANNER ===== -->
+<div class="glass mb-3 overflow-hidden" id="tasks-banner" style="display:none;border-color:rgba(59,130,246,.2)">
+  <div class="flex items-center justify-between px-4 py-2" style="background:rgba(59,130,246,.04);border-bottom:1px solid rgba(59,130,246,.1)">
+    <div class="flex items-center gap-2" id="task-count"></div>
+    <button class="btn btn-ghost text-xs" onclick="document.getElementById('task-cards').classList.toggle('hidden')">Collapse</button>
+  </div>
+  <div class="grid grid-cols-3 divide-x divide-border" id="task-cards"></div>
+</div>
+
+<!-- ===== MAIN GRID ===== -->
+<div class="grid grid-cols-12 gap-3">
+
+  <!-- LEFT: Agent Cards -->
+  <div class="col-span-2 space-y-2" id="agent-cards"></div>
+
+  <!-- RIGHT: Tabs -->
+  <div class="col-span-10 space-y-3">
+    <div class="flex gap-0 border-b border-border" id="tab-bar"></div>
+
+    <!-- LIVE TAB -->
+    <div id="tab-live"></div>
+
+    <!-- LOGS TAB -->
+    <div id="tab-logs" class="hidden"></div>
+
+    <!-- HISTORY TAB -->
+    <div id="tab-history" class="hidden"></div>
+
+    <!-- ANALYTICS TAB -->
+    <div id="tab-analytics" class="hidden space-y-3"></div>
+
+    <!-- COMPARE TAB -->
+    <div id="tab-compare" class="hidden"></div>
+
+    <!-- QUEUE TAB -->
+    <div id="tab-queue" class="hidden space-y-3"></div>
+
+    <!-- EXEC TAB -->
+    <div id="tab-exec" class="hidden"></div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="hidden space-y-3"></div>
+
+  </div>
+</div>
+</div>
+
+<!-- ===== BOTTOM STATUS BAR ===== -->
+<div style="position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-top:1px solid #1E293B;padding:6px 24px;z-index:100;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;gap:32px">
+  <span><span class="kbd">L</span> Live</span><span><span class="kbd">O</span> Logs</span><span><span class="kbd">H</span> History</span><span><span class="kbd">A</span> Analytics</span><span><span class="kbd">C</span> Compare</span><span><span class="kbd">Q</span> Queue</span><span><span class="kbd">E</span> Exec</span><span><span class="kbd">S</span> Settings</span>
+  <span class="text-muted">|</span>
+  <span><span class="kbd">1-3</span> Tasks</span><span><span class="kbd">F7</span> Project</span><span><span class="kbd">&#8984;K</span> Commands</span><span><span class="kbd">?</span> Help</span>
+</div>
+
+<!-- Shortcuts Modal -->
+<div id="shortcuts-modal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal" style="max-width:700px">
+    <div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">&#9000; Keyboard Shortcuts</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').classList.add('hidden')">&times;</button></div>
+    <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+      <div class="text-muted uppercase tracking-wide text-2xs font-mono">Tabs</div><div></div>
+      <div><span class="kbd">L</span> Live View</div><div><span class="kbd">O</span> Logs</div>
+      <div><span class="kbd">H</span> History</div><div><span class="kbd">A</span> Analytics</div>
+      <div><span class="kbd">C</span> Compare A/B</div><div><span class="kbd">Q</span> Queue</div>
+      <div><span class="kbd">E</span> Execute Task</div><div><span class="kbd">S</span> Settings</div>
+      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">Tasks</div><div></div>
+      <div><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Select active task</div><div><span class="kbd">&#9166;</span> Run in Exec tab</div>
+      <div class="pt-3 text-muted uppercase tracking-wide text-2xs font-mono">System</div><div></div>
+      <div><span class="kbd">F7</span> Switch project</div><div><span class="kbd">&#8984;K</span> Command palette</div>
+      <div><span class="kbd">?</span> Toggle this help</div><div><span class="kbd">Esc</span> Close modal / dismiss</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let liveTaskId=null,activeTab='live',settingsTab='routing';
+let _prevTaskCount=0,_logEntries=[],_historyEntries=[];
+const TABS=['live','logs','history','analytics','compare','queue','exec','settings'];
+const COMPARE_MODELS=['opencode-go/deepseek-v4-pro','claude-sonnet-4-6','opencode-go/minimax-m2.7','federated-coding','federated-free','copilot/gpt-5.4'];
+
+function escapeHtml(text){
+  if(text===null||text===undefined)return'';
+  const div=document.createElement('div');div.textContent=String(text);return div.innerHTML;
+}
+function escapeAttr(text){
+  return escapeHtml(text).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function _getApiKey(){
+  const meta=document.querySelector('meta[name="api-key"]');
+  return meta?meta.content:'';
+}
+async function api(u,o){
+  o=o||{};
+  o.headers=o.headers||{};
+  o.headers['X-Requested-With']='XMLHttpRequest';
+  o.headers['X-API-Key']=_getApiKey();
+  try{const r=await fetch(u,o);return r.ok?r.json():null}catch(e){return null}
+}
+
+function showToast(msg,type='success'){
+  const p=document.querySelector('.toast-panel');if(!p)return;
+  const d=document.createElement('div');d.className='glass p-3 flex items-center gap-3';
+  const bc=type==='error'?'rgba(239,68,68,.3)':type==='info'?'rgba(59,130,246,.3)':'rgba(34,197,94,.3)';
+  d.style.cssText=`animation:slideIn .3s ease;border-color:${bc};max-width:340px`;
+  d.innerHTML=`<span class="pulse-dot ${type==='error'?'danger':'online'}"></span><div class="text-xs font-mono">${escapeHtml(msg)}</div><span style="cursor:pointer;margin-left:12px;font-size:14px" onclick="this.parentElement.remove()">&times;</span>`;
+  p.appendChild(d);setTimeout(()=>d.remove(),8000);
+}
+
+// === RENDERERS ===
+async function renderAll(){
+  const d=await api('/api/status');if(!d)return;
+  renderMetrics(d);renderAgents(d);renderTasks(d);renderAlert(d);
+}
+
+function renderMetrics(d){
+  const el=document.getElementById('metrics-row');if(!el)return;
+  const tc=(d.agents||[]).reduce((s,a)=>s+(a.est_cost||0),0);
+  const data=[['Active Agents',d.agents?.length||0,'text-accent'],['Running',d.active_tasks?.length||0,'text-info'],['7d Dels',d.recent_dels||0,'text-text'],['Success',Math.round((d.success_rate||0)*100)+'%','text-accent'],['Cooldowns',d.cooldowns?.length||0,'text-warn'],['Queued',d.pending_queue||0,'text-purple'],['Routes',14,'text-pink'],['Cost 7d','$'+tc.toFixed(2),'text-cyan']];
+  el.innerHTML=data.map(([l,v,c])=>`<div class="glass p-2 text-center"><div class="text-sm font-mono font-bold ${c}">${v}</div><div class="text-2xs text-muted uppercase">${l}</div></div>`).join('');
+}
+
+function renderAgents(d){
+  const el=document.getElementById('agent-cards');if(!el)return;
+  el.innerHTML=(d.agents||[]).map(a=>{
+    const rp=Math.round((a.success_rate||0)*100);
+    const bc=rp>80?'fill-g':rp>50?'fill-y':'fill-r';
+    const sc=a.available?'online':'danger';
+    return `<div class="glass p-2 cursor-pointer relative agent-card" data-agent="${escapeHtml(a.name)}"><div class="flex items-center gap-2"><span class="pulse-dot ${sc}"></span><span class="font-mono text-xs font-semibold">${escapeHtml(a.name)}</span><span class="text-2xs text-cyan ml-auto">$${(a.est_cost||0).toFixed(2)}</span></div><div class="text-2xs text-muted">${escapeHtml(a.current_model)||'&#8212;'}</div><div class="flex items-center justify-between mt-1"><div class="progress flex-1 mr-2"><div class="fill ${bc}" style="width:${rp}%"></div></div><span class="text-2xs text-${rp>80?'accent':rp>50?'warn':'danger'} font-mono">${rp}%</span></div><div class="text-2xs text-muted mt-1">${a.model_count} models &#183; ${a.del_count||0} dels</div></div>`;
+  }).join('')+`<div class="mt-2 px-1"><button class="w-full text-left btn btn-ghost text-xs" style="font-size:10px;padding:3px 8px" onclick="document.getElementById('shortcuts-modal').classList.toggle('hidden')">&#9000; Shortcuts</button></div>`;
+  el.querySelectorAll('.agent-card[data-agent]').forEach(card=>{
+    card.addEventListener('click',function(){openAgentModal(this.dataset.agent);});
+  });
+}
+
+function renderTasks(d){
+  const tasks=d.active_tasks||[];const b=document.getElementById('tasks-banner');
+  if(!b)return;
+  b.style.display='';
+  const tc=document.getElementById('task-count');
+  const cards=document.getElementById('task-cards');
+  if(!tasks.length){
+    if(tc)tc.innerHTML=`<span class="pulse-dot warning"></span><span class="font-mono text-xs text-warn font-semibold">0 Active</span><span class="text-muted text-xs">Execute a task to see live output</span>`;
+    if(cards)cards.innerHTML=`<div class="glass p-4 text-center col-span-3"><div class="text-muted text-xs">No active tasks</div><div class="font-mono text-2xs text-accentdim mt-1">Run a task in the Exec tab or queue one from the Queue tab</div></div>`;
+    return;
+  }
+  if(tc)tc.innerHTML=`<span class="pulse-dot online"></span><span class="font-mono text-xs text-info font-semibold">${tasks.length} Active</span><span class="text-muted text-xs">Press <span class="kbd">1-${Math.min(tasks.length,9)}</span> for live view</span>`;
+  if(cards)cards.innerHTML=tasks.map((t,i)=>{
+    const e=Math.round(Date.now()/1000-(t.started_at||Date.now()/1000));
+    const p=Math.min(Math.round(e/60*100),95);
+    const tid=escapeHtml(t.id||'');
+    return `<div class="glass p-3 cursor-pointer ${i===0?'glass-sel':''}" id="task-${i}" data-task-id="${tid}" data-index="${i+1}" style="border-bottom:1px solid #1E293B"><div class="flex items-center justify-between mb-1"><span class="font-mono text-xs text-info">#${tid.slice(0,8)}</span><div class="flex items-center gap-2"><span class="text-2xs text-muted font-mono">${e}s</span><button class="btn btn-danger btn-stop-task" style="padding:2px 8px;font-size:10px" data-task-id="${tid}">Stop</button></div></div><div class="text-xs text-muted mb-1">${escapeHtml(t.agent)||'&#8212;'} &#183; ${escapeHtml(t.model)||'&#8212;'}</div><div class="text-xs text-text truncate">${escapeHtml(t.task)||'&#8212;'}</div><div class="progress mt-1"><div class="fill fill-g" style="width:${p}%"></div></div></div>`;
+  }).join('');
+  cards.querySelectorAll('[data-task-id]').forEach(el=>{
+    el.addEventListener('click',function(e){if(e.target.closest('.btn-stop-task'))return;selectTask(this.dataset.taskId,this.dataset.index);});
+  });
+  cards.querySelectorAll('.btn-stop-task').forEach(el=>{
+    el.addEventListener('click',function(e){e.stopPropagation();stopTask(this.dataset.taskId);});
+  });
+}
+
+function renderAlert(d){
+  const cds=d.cooldowns||[];const ab=document.getElementById('alert-bar');const msg=document.getElementById('alert-msg');
+  if(!ab||!msg)return;if(!cds.length){ab.style.display='none';return}
+  ab.style.display='';msg.innerHTML=`<span style="font-size:14px">&#9888;</span><span class="font-mono text-xs text-danger">${cds.length} agent(s) in cooldown:</span>`+cds.map(c=>`<span class="font-mono text-xs text-warn mx-2">${escapeHtml(c.key)}${c.remaining_seconds?' ('+Math.round(c.remaining_seconds/60)+'m)':''}</span>`).join('')+`<button class="btn btn-info text-xs ml-3" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal All</button><button class="btn btn-ghost text-xs ml-2" onclick="document.getElementById('alert-bar').style.display='none'">Dismiss</button>`;
+}
+
+// === TAB SWITCHING ===
+function switchTab(t){
+  activeTab=t;
+  document.querySelectorAll('#tab-bar .tab').forEach((e,i)=>{e.classList.toggle('active',TABS[i]===t)});
+  document.querySelectorAll('[id^="tab-"]').forEach(e=>{if(e.id!=='tab-bar')e.classList.add('hidden')});
+  document.getElementById('tab-'+t)?.classList.remove('hidden');
+  if(t==='live')loadLive();if(t==='logs'){_logEntries=[];loadLogs()}if(t==='history')loadHistory();if(t==='analytics')loadAnalytics();if(t==='compare')loadCompare();if(t==='queue')loadQueue();if(t==='exec')loadExec();if(t==='settings')loadSettings();
+}
+
+// === PROJECTS ===
+async function loadProjects(){
+  const d=await api('/api/projects');if(!d)return;
+  const sel=document.getElementById('project-switcher');
+  if(sel){sel.innerHTML=d.projects.map(p=>`<option value="${escapeHtml(p.path)}" ${p.path===d.current?'selected':''}>&#128193; ${escapeHtml(p.name)}</option>`).join('');if(d.current)sel.value=d.current;}
+}
+async function switchProject(path){
+  await api('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});
+  showToast('Switched project: '+path.split('/').pop(),'info');
+  liveTaskId=null;_logEntries=[];_historyEntries=[];
+  document.querySelectorAll('[id^="tab-"]').forEach(e=>{if(e.id!=='tab-bar')e.dataset.loaded='';});
+  renderAll();if(activeTab!=='live')switchTab(activeTab);
+}
+
+// === LIVE ===
+function loadLive(){
+  const el=document.getElementById('tab-live');if(!el)return;
+  if(!liveTaskId){el.innerHTML=`<div class="glass p-6 text-center"><div class="text-muted text-sm mb-2">No task selected</div><div class="font-mono text-xs text-accentdim">Click an active task above or execute a new task</div></div>`;return;}
+  el.innerHTML=`<div class="terminal"><div class="t-head"><div class="t-dot r"></div><div class="t-dot y"></div><div class="t-dot g"></div><span class="font-mono text-xs text-muted ml-2">delegator live &#8212; #${liveTaskId.slice(0,8)}</span></div><div class="t-body" id="live-body" style="max-height:550px"><div class="log m">Loading...</div></div></div><div class="glass p-3 mt-2 flex items-center justify-between"><div class="flex items-center gap-4"><span class="font-mono text-xs">#${liveTaskId.slice(0,8)}</span><span class="text-muted text-xs">|</span><span class="font-mono text-xs" id="live-agent-model">&#8212;</span></div><div class="flex gap-2"><button class="btn btn-danger" onclick="stopTask('${liveTaskId}')">Stop</button><button class="btn btn-ghost" onclick="rerunTask()">Rerun</button><button class="btn btn-ghost" onclick="copyOutput()">Copy</button></div></div>`;
+  loadLiveOutput();
+}
+async function loadLiveOutput(){
+  if(!liveTaskId)return;const d=await api('/api/tasks/'+liveTaskId+'/output');const b=document.getElementById('live-body');
+  if(b&&d){const o=escapeHtml(d.output||'No output yet');b.innerHTML=`<div class="log g">Status: ${escapeHtml(d.status||'unknown')}</div><div class="log m whitespace-pre-wrap">${o.replace(/\n/g,'<br>')}</div>`;}
+}
+function selectTask(id,n){liveTaskId=id;document.querySelectorAll('#task-cards > div').forEach(e=>e.classList.remove('glass-sel'));const el=document.getElementById('task-'+(parseInt(n)-1));if(el)el.classList.add('glass-sel');switchTab('live');}
+function rerunTask(){switchTab('exec');}
+function copyOutput(){const tb=document.querySelector('#tab-live .t-body');if(tb){navigator.clipboard.writeText(tb.textContent);showToast('Copied!');}}
+
+// === LOGS ===
+let _logAutoScroll=true;
+async function loadLogs(){
+  const d=await api('/api/logs?limit=200');if(!d)return;_logEntries=d.entries||[];
+  const el=document.getElementById('tab-logs');if(!el)return;
+  el.innerHTML=`<div class="flex items-center gap-3 mb-2 flex-wrap"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" id="log-agent-filter" onchange="filterLogs()"><option>All agents</option></select><select class="select text-xs" style="padding:4px 8px" id="log-level-filter" onchange="filterLogs()"><option>All levels</option><option>ERROR</option><option>WARN</option><option>INFO</option><option>DEBUG</option></select><input type="text" class="input" style="max-width:200px;padding:4px 8px" placeholder="Search logs..." id="log-search" onkeyup="filterLogs()"><span class="text-muted text-xs ml-auto" id="log-count">${d.total||0} entries</span><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked class="accent-green-500" onchange="_logAutoScroll=this.checked"><span class="text-2xs text-muted font-mono">Auto-scroll</span></label><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportLogs()">Export</button><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="clearLogs()">Clear</button></div><div class="grid grid-cols-12 gap-3"><div class="col-span-9 terminal"><div class="t-head"><div class="t-dot g"></div><div class="t-dot y"></div><div class="t-dot r"></div><span class="font-mono text-xs text-muted ml-2">delegator logs &#8212; streaming</span></div><div class="t-body" style="max-height:550px;overflow-y:auto;font-size:11px;" id="log-stream"></div></div><div class="col-span-3 space-y-3" id="log-sidebar"></div></div>`;
+  const agents=[...new Set(_logEntries.map(e=>e.agent))].filter(Boolean);
+  const af=document.getElementById('log-agent-filter');if(af)af.innerHTML='<option>All agents</option>'+agents.map(a=>`<option>${a}</option>`).join('');
+  renderLogStream(_logEntries);renderLogSidebar(d);
+}
+function renderLogStream(entries){
+  const s=document.getElementById('log-stream');if(!s)return;
+  s.innerHTML=entries.map(e=>`<div class="flex items-start gap-2 py-1 cursor-pointer hover:bg-surface/50" onclick="showLogDetail(${JSON.stringify(e).replace(/"/g,'&quot;')})"${e.level==='ERROR'?' style="background:rgba(239,68,68,.05)"':''}><span class="text-2xs text-muted font-mono whitespace-nowrap">${escapeHtml(e.timestamp)||'&#8212;'}</span><span class="text-2xs text-muted font-mono whitespace-nowrap">${escapeHtml(e.agent)||'&#8212;'}</span><span class="text-2xs text-info font-mono">#${escapeHtml((e.task_id||'').slice(0,8))}</span><span class="text-2xs font-mono whitespace-nowrap" style="color:${e.level==='ERROR'?'#EF4444':e.level==='WARN'?'#F59E0B':e.level==='DEBUG'?'#8B5CF6':'#3B82F6'}">${escapeHtml(e.level)}</span><span class="text-xs text-text">${escapeHtml(e.message)}</span></div>`).join('')||'<div class="text-center text-muted text-xs p-4">No log entries</div>';
+  if(_logAutoScroll){s.scrollTop=s.scrollHeight;}
+}
+function showLogDetail(e){
+  const html=`<div class="space-y-2 text-xs font-mono"><div><span class="text-muted">Timestamp:</span> ${escapeHtml(e.timestamp)||'—'}</div><div><span class="text-muted">Agent:</span> ${escapeHtml(e.agent)||'—'}</div><div><span class="text-muted">Task ID:</span> <span class="text-accent">#${escapeHtml(e.task_id)||'—'}</span></div><div><span class="text-muted">Level:</span> <span style="color:${e.level==='ERROR'?'#EF4444':e.level==='WARN'?'#F59E0B':e.level==='DEBUG'?'#8B5CF6':'#3B82F6'}">${escapeHtml(e.level)}</span></div><div><span class="text-muted">Message:</span> ${escapeHtml(e.message)||'—'}</div></div>`;
+  showModal('Log Entry',html);
+}
+function renderLogSidebar(d){
+  const el=document.getElementById('log-sidebar');if(!el)return;
+  const bl=d.by_level||{};const ba=d.by_agent||{};const te=d.top_errors||[];
+  el.innerHTML=`<div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Metrics</h3><div class="space-y-2">${Object.entries(bl).map(([lvl,cnt])=>{const color=lvl==='ERROR'?'danger':lvl==='WARN'?'warn':lvl==='INFO'?'info':'purple';const fill=lvl==='ERROR'?'fill-r':lvl==='WARN'?'fill-y':lvl==='INFO'?'fill-b':'fill-p';return `<div class="flex justify-between"><span class="text-2xs text-muted">${escapeHtml(lvl)}</span><span class="font-mono text-xs text-${color}">${cnt}</span></div><div class="progress"><div class="fill ${fill}" style="width:${Math.min(cnt*2,100)}%"></div></div>`;}).join('')}</div><div class="border-t border-border mt-3 pt-2 space-y-1"><div class="flex justify-between text-2xs"><span class="text-muted">Error rate</span><span class="font-mono text-danger">${((d.error_rate||0)*100).toFixed(2)}%</span></div><div class="flex justify-between text-2xs"><span class="text-muted">Avg response</span><span class="font-mono text-accent">${d.avg_response_time||0}s</span></div><div class="flex justify-between text-2xs"><span class="text-muted">Active sessions</span><span class="font-mono text-info">${d.active_sessions||0}</span></div><div class="flex justify-between text-2xs"><span class="text-muted">Log rate</span><span class="font-mono text-purple">${d.log_rate||0}/min</span></div></div></div><div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Top Errors</h3><div class="space-y-2 text-2xs font-mono">${te.map(e=>`<div><div class="text-danger">${escapeHtml(e.type)}</div><div class="text-muted">${e.count} occurrences</div></div>`).join('')||'<div class="text-muted">No errors</div>'}</div></div><div class="glass p-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-2">Log Sources</h3><div class="space-y-1 text-2xs">${Object.entries(ba).map(([a,c])=>`<div class="flex justify-between"><span class="font-mono">${escapeHtml(a)}</span><span class="text-muted">${c}</span></div>`).join('')}</div></div>`;
+}
+function filterLogs(){
+  const ag=document.getElementById('log-agent-filter')?.value;const lv=document.getElementById('log-level-filter')?.value;const q=document.getElementById('log-search')?.value?.toLowerCase()||'';
+  let e=[..._logEntries];if(ag&&ag!=='All agents')e=e.filter(x=>x.agent===ag);if(lv&&lv!=='All levels')e=e.filter(x=>x.level===lv);if(q)e=e.filter(x=>JSON.stringify(x).toLowerCase().includes(q));
+  renderLogStream(e);
+}
+function exportLogs(){const c=document.getElementById('log-stream')?.textContent||'';const b=new Blob([c],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-logs.txt';a.click();}
+function clearLogs(){const s=document.getElementById('log-stream');if(s)s.innerHTML='';}
+
+// === HISTORY ===
+async function loadHistory(){
+  const d=await api('/api/metrics?days=14&limit=100');if(!d)return;_historyEntries=d.delegations||[];
+  const el=document.getElementById('tab-history');if(!el)return;
+  const agents=[...new Set(_historyEntries.map(r=>r.to_agent||r.provider_used||'&#8212;'))].filter(Boolean);
+  const workflows=[...new Set(_historyEntries.map(r=>r.workflow||'&#8212;'))].filter(Boolean);
+  el.innerHTML=`<div class="flex items-center gap-3 mb-2"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" id="hist-agent-filter" onchange="filterHistory()"><option>All agents</option>${agents.map(a=>`<option>${a}</option>`).join('')}</select><select class="select text-xs" style="padding:4px 8px" id="hist-wf-filter" onchange="filterHistory()"><option>All workflows</option>${workflows.map(w=>`<option>${w}</option>`).join('')}</select><span class="text-xs text-muted font-mono ml-auto" id="hist-count">${d.total||0} records</span><button class="btn btn-ghost text-xs" style="padding:3px 10px" onclick="exportHistory()">CSV Export</button></div><div class="glass overflow-hidden"><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase tracking-wider" style="background:rgba(30,41,59,.3)"><th class="py-2 px-2">Time</th><th class="py-2 px-2">Agent</th><th class="py-2 px-2">Model</th><th class="py-2 px-2">Task</th><th class="py-2 px-2">WF</th><th class="py-2 px-2">Dur</th><th class="py-2 px-2">FB</th><th class="py-2 px-2">Cost</th><th class="py-2 px-2">Status</th><th class="py-2 px-2">&#10084;</th><th class="py-2 px-2"></th></tr></thead><tbody id="history-tbody"></tbody></table></div>`;
+  renderHistoryTable(_historyEntries);
+}
+function renderHistoryTable(entries){
+  const tb=document.getElementById('history-tbody');if(!tb)return;
+  tb.innerHTML=entries.map(r=>{
+    const t=new Date(r.timestamp||'');const tm=t.getTime()?t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'&#8212;';
+    const s=r.success?'OK':'FAIL';const cls=r.success?'s-ok':'s-fail';const liked=r.liked?'liked':'';const cost=r.cost?'$'+r.cost.toFixed(2):'&#8212;';
+    const rid=escapeHtml(r.id||'');const ragent=escapeHtml(r.to_agent||r.provider_used||'&#8212;');const rmodel=escapeHtml((r.model||'').slice(0,18));const rtask=escapeHtml(r.task_type||'&#8212;');const rwf=escapeHtml(r.workflow||'&#8212;');const rtaskRaw=escapeHtml(r.task_type||'');
+    return `<tr style="border-bottom:1px solid #1E293B"><td class="py-1 px-2 font-mono text-muted">${tm}</td><td class="py-1 px-2 font-mono">${ragent}</td><td class="py-1 px-2 font-mono text-xs text-accent">${rmodel}</td><td class="py-1 px-2 truncate" style="max-width:160px" title="${rtaskRaw}">${rtask}</td><td class="py-1 px-2 font-mono text-muted">${rwf}</td><td class="py-1 px-2 font-mono text-muted">${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'&#8212;'}</td><td class="py-1 px-2 font-mono text-muted">${r.fallback_count||0}</td><td class="py-1 px-2 font-mono text-cyan text-xs">${cost}</td><td class="py-1 px-2"><span class="status ${cls}">${s}</span></td><td class="py-1 px-2"><span class="heart ${liked}" data-id="${rid}">&#10084;</span></td><td class="py-1 px-2"><div class="flex gap-1"><button class="btn btn-ghost btn-view" style="padding:2px 6px;font-size:10px" data-id="${rid}">View</button><button class="btn btn-ghost btn-replay" style="padding:2px 6px;font-size:10px" data-id="${rid}">Replay</button>${!r.success?`<button class="btn btn-ghost btn-retry" style="padding:2px 6px;font-size:10px" data-task="${rtaskRaw}">Retry</button>`:''}</div></td></tr>`;
+  }).join('')||'<tr><td colspan="11" class="text-center text-muted text-xs p-4">No records</td></tr>';
+  // Attach event listeners safely
+  tb.querySelectorAll('.heart[data-id]').forEach(el=>el.addEventListener('click',function(){toggleLike(this.dataset.id,this);}));
+  tb.querySelectorAll('.btn-view[data-id]').forEach(el=>el.addEventListener('click',function(){viewDelegation(this.dataset.id);}));
+  tb.querySelectorAll('.btn-replay[data-id]').forEach(el=>el.addEventListener('click',function(){replayTask(this.dataset.id);}));
+  tb.querySelectorAll('.btn-retry[data-task]').forEach(el=>el.addEventListener('click',function(){retryTask(this.dataset.task);}));
+}
+function filterHistory(){
+  const ag=document.getElementById('hist-agent-filter')?.value;
+  const wf=document.getElementById('hist-wf-filter')?.value;
+  let e=[..._historyEntries];if(ag&&ag!=='All agents')e=e.filter(x=>(x.to_agent||x.provider_used)===ag);if(wf&&wf!=='All workflows')e=e.filter(x=>x.workflow===wf);
+  renderHistoryTable(e);
+}
+async function toggleLike(id,el){
+  const liked=!el.classList.contains('liked');el.classList.toggle('liked');
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'like_delegation',delegation_id:id,liked})});
+}
+function showModal(title,html){
+  const overlay=document.createElement('div');overlay.className='modal-overlay';overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`<div class="modal" style="padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">${title}</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').remove()">&times;</button></div>${html}</div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+async function viewDelegation(id){
+  const d=await api('/api/metrics?days=30&limit=100');if(!d)return;
+  const del=d.delegations.find(r=>r.id===id);
+  if(del){
+    const html=`<div class="space-y-2 text-xs font-mono"><div><span class="text-muted">ID:</span> <span class="text-accent">#${escapeHtml(del.id)||'?'}</span></div><div><span class="text-muted">Agent:</span> ${escapeHtml(del.to_agent)||escapeHtml(del.provider_used)||'—'}</div><div><span class="text-muted">Model:</span> ${escapeHtml(del.model)||'—'}</div><div><span class="text-muted">Workflow:</span> ${escapeHtml(del.workflow)||'—'}</div><div><span class="text-muted">Task:</span> ${escapeHtml(del.task_type)||'—'}</div><div><span class="text-muted">Duration:</span> ${del.duration_ms?Math.round(del.duration_ms/1000)+'s':'—'}</div><div><span class="text-muted">Fallbacks:</span> ${del.fallback_count||0}</div><div><span class="text-muted">Success:</span> <span class="${del.success?'text-accent':'text-danger'}">${del.success?'Yes':'No'}</span></div><div><span class="text-muted">Cost:</span> <span class="text-cyan">${del.cost?'$'+del.cost.toFixed(2):'—'}</span></div></div>`;
+    showModal('Delegation Details',html);
+  }else{showToast('Task not found','error');}
+}
+function retryTask(task){showToast('Retry: '+task,'info');}
+function replayTask(id){showToast('Replay requested for '+id.slice(0,8),'info');}
+function exportHistory(){
+  const h=document.querySelector('#tab-history table');if(h){const b=new Blob([h.textContent],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='delegator-history.csv';a.click();}
+}
+
+// === ANALYTICS ===
+async function loadAnalytics(){
+  const el=document.getElementById('tab-analytics');if(!el)return;
+  if(!el.dataset.loaded){
+    el.dataset.loaded='true';
+    el.innerHTML=`<div class="flex items-center gap-3 mb-3"><span class="text-xs text-muted font-mono">Filter:</span><select class="select text-xs" style="padding:4px 8px" id="analytics-days" onchange="refreshAnalytics()"><option value="1">Last 24h</option><option value="7" selected>Last 7d</option><option value="14">Last 14d</option><option value="30">Last 30d</option></select><select class="select text-xs" style="padding:4px 8px" id="analytics-agent" onchange="refreshAnalytics()"><option value="">All agents</option></select><span class="text-muted text-xs ml-auto" id="analytics-count">Loading...</span><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportAnalyticsCSV()">CSV</button><button class="btn btn-ghost text-xs" style="padding:3px 8px" onclick="exportAnalyticsPDF()">PDF</button></div><div id="analytics-content"></div>`;
+    const st=await api('/api/status');
+    const agSel=document.getElementById('analytics-agent');
+    if(agSel&&st?.agents)agSel.innerHTML='<option value="">All agents</option>'+st.agents.map(a=>`<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)}</option>`).join('');
+  }
+  refreshAnalytics();
+}
+async function refreshAnalytics(){
+  const days=parseInt(document.getElementById('analytics-days')?.value||'7');
+  const agent=document.getElementById('analytics-agent')?.value||'';
+  const d=await api(`/api/metrics?days=${days}&limit=200${agent?'&agent='+agent:''}`);if(!d)return;
+  const el=document.getElementById('analytics-content');if(!el)return;
+  const dels=d.delegations||[];
+  document.getElementById('analytics-count').textContent=`${d.total||0} records`;
+  const byDay={};dels.forEach(r=>{const dd=(r.timestamp||'').slice(0,10);if(!dd)return;if(!byDay[dd])byDay[dd]={t:0,o:0};byDay[dd].t++;if(r.success)byDay[dd].o++;});
+  const daysArr=Object.entries(byDay).slice(-7);const dn=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const byAgent={};dels.forEach(r=>{const a=r.to_agent||'?';byAgent[a]=(byAgent[a]||0)+1;});
+  const maxA=Math.max(1,...Object.values(byAgent));
+  const costs=d.costs||{};const failures=d.failures||{};const maxF=Math.max(1,...Object.values(failures));const rankings=d.rankings||[];
+  el.innerHTML=`<div class="grid grid-cols-3 gap-3 mb-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Success Rate (${days}d)</h3><div class="bar-group items-end h-32">${daysArr.map(([dd,data])=>{const dt=new Date(dd+'T00:00:00');const pct=data.t?Math.round(data.o/data.t*100):0;const cls=pct>80?'g':pct>50?'y':'r';return `<div class="flex flex-col items-center"><div class="bar ${cls}" style="height:${pct}%"></div><span class="text-2xs text-muted mt-1">${dn[dt.getDay()]}</span></div>`;}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Delegations by Agent</h3><div class="space-y-2">${Object.entries(byAgent).sort((a,b)=>b[1]-a[1]).map(([a,c],i)=>{const fills=['fill-g','fill-b','fill-y','fill-p','fill-r'];return `<div><div class="flex justify-between text-2xs mb-1"><span class="font-mono">${escapeHtml(a)}</span><span class="text-accent">${c}</span></div><div class="progress"><div class="fill ${fills[i%5]}" style="width:${Math.round(c/maxA*100)}%"></div></div></div>`;}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cost Breakdown</h3><div class="space-y-2 text-xs font-mono">${Object.entries(costs).map(([a,c])=>`<div class="flex justify-between"><span>${escapeHtml(a)}</span><span class="text-cyan">$${c.toFixed(2)}</span></div>`).join('')}<div class="border-t border-border pt-2 flex justify-between font-bold"><span>Total ${days}d</span><span class="text-cyan">$${Object.values(costs).reduce((a,b)=>a+b,0).toFixed(2)}</span></div></div><div class="flex gap-2 mt-3"><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportAnalyticsCSV()">CSV</button><button class="btn btn-ghost text-xs flex-1" style="padding:3px 8px;font-size:10px" onclick="exportAnalyticsPDF()">PDF</button></div></div></div><div class="grid grid-cols-2 gap-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Failure Types</h3><div class="space-y-2">${Object.entries(failures).sort((a,b)=>b[1]-a[1]).map(([f,c],i)=>{const fills=['fill-y','fill-r','fill-y','fill-r'];return `<div><div class="flex justify-between text-2xs mb-1"><span>${escapeHtml(f)}</span><span class="text-warn">${c}</span></div><div class="progress"><div class="fill ${fills[i%4]}" style="width:${Math.round(c/maxF*100)}%"></div></div></div>`;}).join('')}</div></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Learned Rankings</h3><div class="space-y-2 text-xs font-mono">${rankings.map((r,i)=>`<div class="flex justify-between"><span class="${i===0?'text-accent':'text-muted'}">${i===0?'★':'☆'} ${escapeHtml(r.agent)}</span><span>score ${r.score}</span><span class="text-muted">${r.dels} dels</span></div>`).join('')}</div></div></div>`;
+}
+function exportAnalyticsCSV(){const els=document.querySelectorAll('#tab-analytics .text-xs.font-mono,#tab-analytics .text-2xs');const data=[];els.forEach(el=>data.push(el.textContent));const blob=new Blob([data.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='delegator-analytics.csv';a.click();}
+function exportAnalyticsPDF(){exportAnalyticsCSV();showToast('CSV exported (PDF requires additional deps)','info');}
+
+// === COMPARE ===
+async function loadCompare(){
+  const el=document.getElementById('tab-compare');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
+  const st=await api('/api/status');
+  const allModels=[];(st?.agents||[]).forEach(a=>{if(a.models)a.models.forEach(m=>{if(!allModels.includes(m))allModels.push(m);});});
+  const modelOpts=allModels.length?allModels.map(m=>`<option>${m}</option>`).join(''):`<option>federated-coding</option><option>federated-sonnet</option>`;
+  el.innerHTML=`<div class="flex items-center gap-4 mb-3"><span class="font-mono text-xs text-muted">Compare same task across agents:</span><input type="text" class="input" style="max-width:380px" id="compare-task" placeholder="Task description..." value=""><button class="btn btn-pri" onclick="runCompare()">Run A/B Test</button></div><div class="grid grid-cols-2 gap-3"><div class="compare-col" id="compare-a"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">A:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${modelOpts}</select></div><span class="text-2xs text-accent font-mono typing">idle</span></div><div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="text-muted text-xs text-center pt-6">Ready. Run A/B Test to compare.</div></div></div><div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: —</span><span>Est cost: —</span></div></div><div class="compare-col" id="compare-b"><div class="flex items-center justify-between mb-2"><div class="flex items-center gap-2"><span class="pulse-dot online"></span><span class="font-mono text-xs font-semibold">B:</span><select class="select compare-sel text-xs" style="padding:4px 8px">${allModels.length?allModels.map((m,i)=>`<option ${i===1?'selected':''}>${m}</option>`).join(''):`<option selected>federated-sonnet</option><option>federated-coding</option>`}</select></div><span class="text-2xs text-accent font-mono typing">idle</span></div><div class="terminal" style="max-height:200px"><div class="t-head"><div class="t-dot g"></div><span class="font-mono text-2xs text-muted">open output</span></div><div class="t-body" style="max-height:150px"><div class="text-muted text-xs text-center pt-6">Ready.</div></div></div><div class="flex justify-between mt-2 text-xs font-mono"><span>Tokens: —</span><span>Est cost: —</span></div></div></div><div class="glass p-3 mt-3 flex items-center gap-4"><span class="font-mono text-xs text-muted">Result: <span class="text-2xs" id="compare-result">⏳ Both agents idle</span></span><button class="btn btn-ghost text-xs ml-auto" style="padding:3px 10px" onclick="stopCompare()">Stop Both</button></div>`;
+}
+async function runCompare(){
+  const task=document.getElementById('compare-task')?.value;if(!task)return;
+  const sels=document.querySelectorAll('.compare-sel');const ma=sels[0]?.value;const mb=sels[1]?.value;
+  document.querySelectorAll('.compare-col').forEach(c=>{c.classList.remove('done');c.classList.add('running');});
+  document.querySelectorAll('.compare-col .t-body').forEach(b=>b.innerHTML='<div class="log b">Running...</div>');
+  const res=document.getElementById('compare-result');if(res)res.innerHTML='⏳ Both agents running...';
+  const d=await api('/api/compare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model_a:ma,model_b:mb})});
+  if(!d)return;
+  ['A','B'].forEach((lbl,i)=>{
+    const r=d.results[lbl];if(!r)return;
+    const col=document.querySelectorAll('.compare-col')[i];const body=col?.querySelector('.t-body');
+    if(body)body.innerHTML=`<div class="log g">${r.success?'&#10003;':'&#10007;'} Provider: ${escapeHtml(r.provider)||'&#8212;'}</div><div class="log m">Duration: ${r.duration_ms?Math.round(r.duration_ms/1000)+'s':'&#8212;'}</div><div class="log m">Fallbacks: ${r.fallback_count||0}</div><div class="log m whitespace-pre-wrap">${escapeHtml((r.output||'').slice(0,500))}</div>`;
+    col?.classList.remove('running');col?.classList.add('done');
+  });
+  if(res)res.innerHTML='✅ Comparison complete';
+}
+function stopCompare(){
+  document.querySelectorAll('.compare-col').forEach(c=>c.classList.remove('running'));
+  showToast('Compare stopped','info');
+}
+
+// === QUEUE ===
+async function loadQueue(){
+  const d=await api('/api/config');if(!d)return;
+  const el=document.getElementById('tab-queue');if(!el)return;
+  el.innerHTML=`<div class="grid grid-cols-2 gap-3"><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Scheduled Tasks</h3>${(d.scheduled||[]).map(s=>`<div class="glass p-3 mb-2" style="background:rgba(139,92,246,.04)"><div class="flex items-center justify-between"><div><div class="font-mono text-xs">${escapeHtml(s.task)||''}</div><div class="text-2xs text-muted">${escapeHtml(s.model)} &#183; ${escapeHtml(s.workflow)}</div></div><div class="text-right"><span class="font-mono text-xs text-purple">${escapeHtml(s.cron)||'manual'}</span><div class="mt-1"><button class="btn btn-ghost text-xs btn-run-q" style="padding:2px 6px;font-size:9px" data-task="${escapeHtml(s.task)}" data-model="${escapeHtml(s.model)}">Run Now</button></div></div></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No scheduled tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addScheduled()">+ Add Scheduled Task</button></div><div class="glass p-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Pending Queue</h3>${(d.pending_queue||[]).map((q,i)=>`<div class="flex items-center justify-between p-3" style="border-bottom:1px solid #1E293B"><div><div class="font-mono text-xs">${escapeHtml(q.task)||''}</div><div class="text-2xs text-muted">${escapeHtml(q.model)} &#183; ${escapeHtml(q.workflow)}</div></div><div class="flex gap-2"><span class="status s-purple">queued</span><button class="btn btn-ghost btn-start-q" style="padding:2px 6px;font-size:9px" data-index="${i}">Start</button></div></div>`).join('')||'<div class="text-xs text-muted text-center p-3">No pending tasks</div>'}<button class="btn btn-info text-xs w-full mt-2" style="padding:4px" onclick="addPending()">+ Enqueue Task</button></div></div>`;
+  el.querySelectorAll('.btn-run-q[data-task]').forEach(b=>b.addEventListener('click',function(){execFromQueue(this.dataset.task,this.dataset.model);}));
+  el.querySelectorAll('.btn-start-q[data-index]').forEach(b=>b.addEventListener('click',function(){startQueued(parseInt(this.dataset.index));}));
+}
+async function addScheduled(){
+  const t=prompt('Task description:');if(!t)return;const m=prompt('Model:','federated-coding')||'federated-coding';const c=prompt('Cron (e.g. 0 2 * * *):','')||'';
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_scheduled',task:t,model:m,workflow:'subagent-driven',cron:c})});
+  loadQueue();
+}
+async function addPending(){
+  const t=prompt('Task description:');if(!t)return;
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_pending',task:t,model:'federated-coding',workflow:'subagent-driven'})});
+  loadQueue();
+}
+async function startQueued(idx){
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'start_queued',index:idx})});
+  loadQueue();renderAll();
+}
+async function execFromQueue(task,model){
+  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,model:model||'federated-coding',no_worktree:true})});
+  if(r){liveTaskId=r.task_id;switchTab('live');renderAll();}
+}
+
+// === EXEC ===
+function loadExec(){
+  const el=document.getElementById('tab-exec');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
+  const ms=['federated-coding','federated-sonnet','federated-free','claude-sonnet-4-6','opencode-go/deepseek-v4-pro','opencode-go/minimax-m2.7'];
+  el.innerHTML=`<div class="glass p-5 space-y-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Task</label><input class="input" id="exec-task" placeholder="Describe what the agent should do..."></div><div class="grid grid-cols-3 gap-4"><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Model</label><select class="select w-full" id="exec-model">${ms.map(m=>`<option>${m}</option>`).join('')}</select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">Workflow</label><select class="select w-full" id="exec-wf"><option>subagent-driven</option><option>brainstorming</option><option>writing-plans</option><option>verification</option></select></div><div><label class="font-mono text-xs text-muted uppercase tracking-wider block mb-2">From Agent</label><select class="select w-full" id="exec-from"><option value="">auto-detect</option><option>claude</option><option>opencode</option><option>copilot</option></select></div></div><div class="flex items-center gap-4 pt-2"><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked class="accent-green-500" id="exec-stream"><span class="text-xs text-muted font-mono">Stream</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" class="accent-green-500" id="exec-no-wt"><span class="text-xs text-muted font-mono">No worktree</span></label><button class="btn btn-pri ml-auto" onclick="execTask()">Execute &#9654;</button></div></div>`;
+}
+async function execTask(){
+  const t=document.getElementById('exec-task');if(!t?.value)return;
+  const r=await api('/api/exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task:t.value,model:document.getElementById('exec-model')?.value||'federated-coding',workflow:document.getElementById('exec-wf')?.value||'subagent-driven',from_agent:document.getElementById('exec-from')?.value||'',stream:document.getElementById('exec-stream')?.checked||false,no_worktree:document.getElementById('exec-no-wt')?.checked||false})});
+  if(r){liveTaskId=r.task_id;switchTab('live');renderAll();showToast('Task started');}
+}
+async function stopTask(id){
+  await api('/api/tasks/'+(id||liveTaskId||'')+'/stop',{method:'POST'});
+  showToast('Task stopped');renderAll();
+}
+
+// === SETTINGS ===
+async function loadSettings(){
+  const el=document.getElementById('tab-settings');if(!el||el.dataset.loaded)return;el.dataset.loaded='true';
+  el.innerHTML=`<div class="flex gap-0 border-b border-border mb-4" id="settings-subtabs">${['Routing','Control','Notifications','General'].map(t=>`<div class="tab ${t.toLowerCase()===settingsTab?'active':''}" onclick="switchSettingsTab('${t.toLowerCase()}')">${t}</div>`).join('')}</div><div id="set-routing" class="space-y-3"></div><div id="set-control" class="hidden space-y-3"></div><div id="set-notifications" class="hidden space-y-3" style="overflow:visible"></div><div id="set-general" class="hidden space-y-3"></div>`;
+  loadSettingsSub();
+}
+function switchSettingsTab(t){
+  settingsTab=t;const parent=document.getElementById('tab-settings');if(!parent)return;
+  const stabs=['routing','control','notifications','general'];
+  parent.querySelectorAll('#settings-subtabs .tab').forEach((e,i)=>{e.classList.toggle('active',stabs[i]===t)});
+  parent.querySelectorAll('[id^="set-"]').forEach(e=>e.classList.add('hidden'));
+  const active=document.getElementById('set-'+t);if(active){active.classList.remove('hidden');loadSettingsSub();}
+}
+async function loadSettingsSub(){
+  const d=await api('/api/config');if(!d)return;
+  const el=document.getElementById('set-'+settingsTab);if(!el)return;
+  if(settingsTab==='routing'){
+    const pri=d.provider_priority||[];
+    const st=await api('/api/status');
+    const agentMap={};(st?.agents||[]).forEach(a=>{agentMap[a.name]={rate:Math.round((a.success_rate||0)*100),dels:a.del_count||0};});
+    const routes=await api('/api/routes');
+    const routesHtml=(routes?.routes||[]).map((rt,idx)=>`<div class="route-item flex items-center justify-between p-2 rounded text-xs" style="background:rgba(30,41,59,.3);border-bottom:1px solid #1E293B" data-idx="${idx}"><div class="flex items-center gap-2 flex-1"><span class="font-mono text-muted">${rt.workflow}</span><span class="text-muted">/</span><span class="font-mono">${rt.task}</span><span class="text-muted mx-1">→</span><span class="font-mono text-accent">${rt.agent}</span><span class="text-muted">:</span><span class="font-mono text-info">${rt.model}</span></div><div class="flex gap-1"><button class="btn btn-ghost" style="padding:2px 8px;font-size:10px" onclick="editRouteRow(${idx})">Edit</button><button class="btn btn-danger" style="padding:2px 8px;font-size:10px" onclick="removeRouteRow(this)">✕</button></div></div><div class="route-editor hidden p-2 rounded" style="background:rgba(30,41,59,.5)" id="route-editor-${idx}"></div>`).join('');
+    el.innerHTML=`<div class="glass p-5 mb-4"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Provider Priority <span class="text-2xs text-muted">&#8693; Drag to reorder</span></h3><div class="space-y-1" id="prio-list">${pri.map((a,i)=>{const stats=agentMap[a]||{rate:0,dels:0};const rc=stats.rate>80?'text-accent':stats.rate>50?'text-warn':'text-danger';return `<div class="flex items-center gap-3 p-2 rounded cursor-grab" draggable="true" style="border:1px solid ${i===0?'rgba(34,197,94,.2)':'transparent'};background:${i===0?'rgba(34,197,94,.04)':'transparent'}"><span class="text-xs text-muted">&#8693;</span><span class="font-mono text-xs">${i+1}. ${a}</span><span class="text-2xs ${rc} ml-auto">${stats.rate}% · ${stats.dels}</span><span class="text-2xs text-muted">▲▼</span></div>`;}).join('')}</div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveRouting()">Save Priority</button></div><div class="glass p-5"><div class="flex items-center justify-between mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Edit Routes <span class="text-2xs text-muted">${routes?.routes?.length||0} configured</span></h3><button class="btn btn-info text-xs" style="padding:3px 10px" onclick="addRouteRow()">+ Add Route</button></div><div class="space-y-1" id="route-list">${routesHtml||'<div class="text-xs text-muted text-center p-3">No routes configured</div>'}</div><div id="route-add-container"></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveRoutes()">Save Routes</button></div>`;
+    initDragSort();
+  }else if(settingsTab==='control'){
+    const cd=d.cooldown_config||{};
+    const thresh=cd.failure_threshold!==undefined?cd.failure_threshold:3;
+    const base=cd.base_minutes!==undefined?cd.base_minutes:5;
+    const maxv=cd.max_minutes!==undefined?cd.max_minutes:60;
+    const ttl=cd.worktree_ttl!==undefined?cd.worktree_ttl:24;
+    el.innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Circuit Breaker</h3><div class="grid grid-cols-2 gap-3"><div><label class="text-2xs text-muted block mb-1">Threshold</label><input type="number" value="${thresh}" class="input" id="cb-thresh"></div><div><label class="text-2xs text-muted block mb-1">Base Cooldown</label><div class="flex items-center gap-1"><input type="number" value="${base}" class="input" id="cb-base"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Max Cooldown</label><div class="flex items-center gap-1"><input type="number" value="${maxv}" class="input" id="cb-max"><span class="text-2xs text-muted">min</span></div></div><div><label class="text-2xs text-muted block mb-1">Worktree TTL</label><div class="flex items-center gap-1"><input type="number" value="${ttl}" class="input" id="cb-ttl"><span class="text-2xs text-muted">hrs</span></div></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="saveCircuitBreaker()">Apply</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Cooldown Status</h3><div class="space-y-2" id="cooldown-list">Loading...</div><div class="flex gap-2 mt-3"><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Reset All</button><button class="btn btn-ghost text-xs flex-1" style="padding:4px 10px" onclick="autoHeal()">Auto-Heal</button></div></div></div>`;
+    const st=await api('/api/status');const cl=document.getElementById('cooldown-list');
+    if(cl&&st)cl.innerHTML=(st.cooldowns||[]).map(c=>`<div class="flex items-center justify-between"><span class="font-mono text-xs">${escapeHtml(c.key)}</span><span class="status s-warn">cooldown</span><span class="text-2xs text-danger">${c.remaining_seconds?Math.round(c.remaining_seconds/60)+'m remaining':'active'}</span></div>`).join('')||'<div class="font-mono text-xs text-accent">No active cooldowns</div>';
+  }else if(settingsTab==='notifications'){
+    const cfg=d.notifications||{};const tg=cfg.telegram||{};const wh=cfg.webhooks||{};
+    const tt=(c)=>`<span class="tooltip-trigger"><span class="info-icon" style="width:14px;height:14px;font-size:9px">?</span><span class="tooltip-content">${c}</span></span>`;
+    el.innerHTML=`<div class="grid grid-cols-2 gap-4"><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Telegram</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Telegram Bot Setup:</b><br>1. Open Telegram, search <code>@BotFather</code><br>2. Send <code>/newbot</code>, follow prompts<br>3. Copy the HTTP API token<br>4. Message your bot with /start <span style="color:#F59E0B">(bot won't reply — this is normal)</span><br>5. Open <code>api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code><br>6. Find <code>chat.id</code> in the JSON response<br>7. Paste both values below<br><br><b>Tip:</b> If getUpdates is empty, send any text to your bot first</span></span></div><div class="space-y-3"><div><label class="text-2xs text-muted block mb-1">Bot Token ${tt('From @BotFather after <code>/newbot</code><br>Format: <code>123456789:ABC-DEF...</code>')}</label><input class="input" id="tg-token" placeholder="123456789:ABC-DEF..." value="${escapeAttr(tg.bot_token)||''}"></div><div><label class="text-2xs text-muted block mb-1">Chat ID ${tt('From getUpdates API response<br>Group: <code>-1001234567890</code><br>User: <code>123456789</code>')}</label><input class="input" id="tg-chat" placeholder="-1001234567890" value="${escapeAttr(tg.chat_id)||''}"></div><div class="border-t border-border pt-3"><div class="text-2xs text-muted mb-2">Notify me when:</div><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="task_completed" ${(tg.events||[]).includes('task_completed')?'checked':''}><span class="text-xs">Task completed</span>${tt('Sends ✅ with task ID, agent, model, duration, and output summary')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="task_failed" ${(tg.events||[]).includes('task_failed')?'checked':''}><span class="text-xs">Task failed / rate limited</span>${tt('Sends ❌ with error type, fallback count, and failing provider')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="agent_cooldown" ${(tg.events||[]).includes('agent_cooldown')?'checked':''}><span class="text-xs">Agent enters cooldown</span>${tt('Sends ⚠ when agent hits failure threshold, includes cooldown duration')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 tg-ev" value="daily_summary" ${(tg.events||[]).includes('daily_summary')?'checked':''}><span class="text-xs">Daily summary report</span>${tt('Sends every 24h: total dels, success rate, top agents, est. cost')}</label></div><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveTelegramConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestTelegram()">Send Test</button></div></div></div><div class="glass p-5" style="overflow:visible"><div class="flex items-center gap-2 mb-3"><h3 class="font-mono text-xs text-muted uppercase tracking-wider">Webhooks</h3><span class="tooltip-trigger"><span class="info-icon">?</span><span class="tooltip-content"><b>Webhook Setup:</b><br><b>Slack:</b> api.slack.com → Create App → Incoming Webhooks → copy URL<br><b>Discord:</b> Server Settings → Integrations → Webhooks → Create → copy URL<br><b>Email:</b> Configure SMTP host, port, user, pass, from address, and recipient</span></span></div><div class="space-y-3"><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="task_failed" ${(wh.events||[]).includes('task_failed')?'checked':''}><span class="text-xs">On task failure</span>${tt('Fires when any provider fails:<br>rate limit, timeout, exception, or all providers exhausted')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="task_success" ${(wh.events||[]).includes('task_success')?'checked':''}><span class="text-xs">On task success</span>${tt('Includes provider used, model, duration, and fallback count')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="rate_limit" ${(wh.events||[]).includes('rate_limit')?'checked':''}><span class="text-xs">On rate limit detected</span>${tt('Rate limit patterns matched in agent output → triggers cooldown + fallback')}</label><label class="flex items-center gap-2 cursor-pointer mb-1"><input type="checkbox" class="accent-green-500 wh-ev" value="health_change" ${(wh.events||[]).includes('health_change')?'checked':''}><span class="text-xs">On health change</span>${tt('Agent going offline or coming back online after health check')}</label><input type="text" class="input mt-2" id="wh-url" placeholder="Slack/Discord webhook URL" value="${escapeAttr(wh.slack_url)||''}"><div class="flex gap-2 mt-2"><button class="btn btn-pri text-xs flex-1" style="padding:4px 10px" onclick="saveWebhookConfig()">Save Config</button><button class="btn btn-info text-xs flex-1" style="padding:4px 10px" onclick="sendTestWebhook()">Send Test</button></div><div class="flex gap-2 mt-1"><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="document.getElementById('wh-url').value='https://hooks.slack.com/services/...'">+ Slack</button><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="document.getElementById('wh-url').value='https://discord.com/api/webhooks/...'">+ Discord</button><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="document.getElementById('wh-url').value='smtp://mail.example.com:587'">+ Email</button></div></div></div></div>`;
+  }else{
+    const p=d.preferences||{};
+    const mSel=(opts,sel)=>opts.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('');
+    const rSel=(opts,sel)=>opts.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('');
+    el.innerHTML=`<div class="space-y-4"><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Preferences</h3><div class="grid grid-cols-3 gap-4"><div><label class="text-2xs text-muted block mb-1">Default Model</label><select class="select w-full text-xs" id="pref-model">${mSel(['federated-coding','federated-sonnet','federated-free'],p.default_model)}</select></div><div><label class="text-2xs text-muted block mb-1">Default Workflow</label><select class="select w-full text-xs" id="pref-wf">${mSel(['subagent-driven','brainstorming','writing-plans','verification'],p.default_workflow)}</select></div><div><label class="text-2xs text-muted block mb-1">Auto-Refresh</label><select class="select w-full text-xs" id="pref-ref">${rSel(['off','5s','10s','30s'],p.auto_refresh||'5s')}</select></div></div><button class="btn btn-pri mt-3 text-xs" style="padding:4px 14px" onclick="savePreferences()">Save Preferences</button></div><div class="glass p-5"><h3 class="font-mono text-xs text-muted uppercase tracking-wider mb-3">Danger Zone</h3><div class="space-y-2"><div class="flex items-center justify-between"><span class="text-xs">Reset all cooldowns</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="autoHeal()">Reset</button></div><div class="flex items-center justify-between"><span class="text-xs">Clear delegation history</span><button class="btn btn-danger text-xs" style="padding:4px 10px" onclick="clearHistory()">Clear</button></div><div class="flex items-center justify-between"><span class="text-xs">Reset learned rankings</span><button class="btn btn-ghost text-xs" style="padding:4px 10px" onclick="resetRankings()">Reset</button></div></div></div></div>`;
+  }
+}
+
+// === SETTINGS ACTIONS ===
+function routeEditorHtml(wf,task,agent,model,onSave,onCancel){
+  return `<div class="flex items-center gap-2"><select class="select text-xs rt-wf" style="padding:4px 6px;flex:2"><option ${wf==='subagent-driven'?'selected':''}>subagent-driven</option><option ${wf==='brainstorming'?'selected':''}>brainstorming</option><option ${wf==='writing-plans'?'selected':''}>writing-plans</option><option ${wf==='verification'?'selected':''}>verification</option></select><select class="select text-xs rt-task" style="padding:4px 6px;flex:2"><option ${task==='implementation'?'selected':''}>implementation</option><option ${task==='testing'?'selected':''}>testing</option><option ${task==='code_review'?'selected':''}>code_review</option><option ${task==='research'?'selected':''}>research</option></select><span class="text-muted text-xs">→</span><select class="select text-xs rt-agent" style="padding:4px 6px;flex:1"><option ${agent==='opencode'?'selected':''}>opencode</option><option ${agent==='claude'?'selected':''}>claude</option><option ${agent==='copilot'?'selected':''}>copilot</option></select><span class="text-muted text-xs">:</span><select class="select text-xs rt-model" style="padding:4px 6px;flex:2"><option ${model==='federated-coding'?'selected':''}>federated-coding</option><option ${model==='federated-sonnet'?'selected':''}>federated-sonnet</option><option ${model==='federated-free'?'selected':''}>federated-free</option></select><button class="btn btn-pri text-xs" style="padding:2px 10px" onclick="${onSave}">Save</button><button class="btn btn-ghost text-xs" style="padding:2px 10px" onclick="${onCancel}">Cancel</button></div>`;
+}
+function editRouteRow(idx){
+  const item=document.querySelector(`.route-item[data-idx="${idx}"]`);if(!item)return;
+  const editor=document.getElementById('route-editor-'+idx);if(!editor)return;
+  const wf=item.querySelector('.font-mono.text-muted')?.textContent||'subagent-driven';
+  const task=item.querySelector('.font-mono:not(.text-accent):not(.text-info)')?.textContent||'implementation';
+  const agent=item.querySelector('.font-mono.text-accent')?.textContent||'opencode';
+  const model=item.querySelector('.font-mono.text-info')?.textContent||'federated-coding';
+  editor.innerHTML=routeEditorHtml(wf,task,agent,model,`commitRouteEdit(${idx})`,`cancelRouteEdit(${idx})`);
+  item.classList.add('hidden');editor.classList.remove('hidden');
+}
+function cancelRouteEdit(idx){
+  const item=document.querySelector(`.route-item[data-idx="${idx}"]`);const editor=document.getElementById('route-editor-'+idx);
+  if(item)item.classList.remove('hidden');if(editor){editor.classList.add('hidden');editor.innerHTML='';}
+}
+async function commitRouteEdit(idx){
+  const editor=document.getElementById('route-editor-'+idx);if(!editor)return;
+  const wf=editor.querySelector('.rt-wf')?.value||'subagent-driven';
+  const task=editor.querySelector('.rt-task')?.value||'implementation';
+  const agent=editor.querySelector('.rt-agent')?.value||'opencode';
+  const model=editor.querySelector('.rt-model')?.value||'federated-coding';
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_route',workflow:wf,task,agent,model})});
+  cancelRouteEdit(idx);
+  loadSettingsSub();
+  showToast('Route updated','success');
+}
+async function removeRouteRow(btn){
+  const item=btn.closest('.route-item');if(!item)return;
+  const wf=item.querySelector('.font-mono.text-muted')?.textContent||'';
+  const task=item.querySelector('.font-mono:not(.text-accent):not(.text-info)')?.textContent||'';
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'remove_route',workflow:wf,task})});
+  item.remove();
+  showToast('Route removed','info');
+}
+function addRouteRow(){
+  const container=document.getElementById('route-add-container');if(!container)return;
+  container.innerHTML=`<div class="p-2 rounded mt-2" style="background:rgba(34,197,94,.04);border:1px solid rgba(34,197,94,.2)">${routeEditorHtml('subagent-driven','implementation','opencode','federated-coding','commitNewRoute()','cancelNewRoute()')}</div>`;
+}
+function cancelNewRoute(){const c=document.getElementById('route-add-container');if(c)c.innerHTML='';}
+async function commitNewRoute(){
+  const container=document.getElementById('route-add-container');if(!container)return;
+  const wf=container.querySelector('.rt-wf')?.value||'subagent-driven';
+  const task=container.querySelector('.rt-task')?.value||'implementation';
+  const agent=container.querySelector('.rt-agent')?.value||'opencode';
+  const model=container.querySelector('.rt-model')?.value||'federated-coding';
+  await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'add_route',workflow:wf,task,agent,model})});
+  cancelNewRoute();loadSettingsSub();showToast('Route added','success');
+}
+async function saveRoutes(){
+  showToast('Routes auto-saved on each edit','info');
+}
+async function saveRouting(){
+  const pri=[];document.querySelectorAll('#prio-list .font-mono.text-xs').forEach(e=>{pri.push(e.textContent.replace(/^\d+\.\s*/,''));});
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'routing_priority',priority:pri})});
+  showToast(r?'Priority saved!':'Save failed',r?'success':'error');
+}
+async function saveCircuitBreaker(){
+  const cfg={failure_threshold:parseInt(document.getElementById('cb-thresh')?.value)||3,base_minutes:parseInt(document.getElementById('cb-base')?.value)||5,max_minutes:parseInt(document.getElementById('cb-max')?.value)||60,worktree_ttl:parseInt(document.getElementById('cb-ttl')?.value)||24};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'cooldown',config:cfg})});
+  showToast(r?'Saved!':'Failed',r?'success':'error');
+}
+async function saveTelegramConfig(){
+  const ev=[];document.querySelectorAll('.tg-ev:checked').forEach(c=>ev.push(c.value));
+  const cfg={telegram:{bot_token:document.getElementById('tg-token')?.value||'',chat_id:document.getElementById('tg-chat')?.value||'',events:ev},webhooks:((await api('/api/config'))||{}).notifications?.webhooks||{slack_url:'',events:[]}};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});
+  showToast(r?'Telegram config saved!':'Save failed',r?'success':'error');
+}
+async function saveWebhookConfig(){
+  const ev=[];document.querySelectorAll('.wh-ev:checked').forEach(c=>ev.push(c.value));
+  const cfg={webhooks:{slack_url:document.getElementById('wh-url')?.value||'',events:ev},telegram:((await api('/api/config'))||{}).notifications?.telegram||{bot_token:'',chat_id:'',events:[]}};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'notifications',notifications:cfg})});
+  showToast(r?'Webhook config saved!':'Save failed',r?'success':'error');
+}
+async function sendTestTelegram(){
+  const tok=document.getElementById('tg-token')?.value?.trim();const cid=document.getElementById('tg-chat')?.value?.trim();
+  if(!tok||!cid){showToast('Enter bot token and chat ID','error');return;}
+  if(!tok.includes(':')){showToast('Bot token must contain a colon (:). Copy the full token from @BotFather.','error');return;}
+  if(isNaN(Number(cid))){showToast('Chat ID should be a number (e.g., 123456789 or -1001234567890)','error');return;}
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_telegram',token:tok,chat_id:cid})});
+  if(r?.status==='ok'){showToast(r.message||'Test sent!','success');}
+  else{showToast(r?.message||'Send failed — check token and chat ID','error');}
+}
+async function sendTestWebhook(){
+  const url=document.getElementById('wh-url')?.value?.trim();if(!url){showToast('Enter a webhook URL','error');return;}
+  if(!url.startsWith('http')){showToast('Webhook URL must start with http:// or https://','error');return;}
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'test_webhook',url})});
+  if(r?.status==='ok'){showToast(r.message||'Test sent!','success');}
+  else{showToast(r?.message||'Send failed — check webhook URL','error');}
+}
+async function savePreferences(){
+  const s=document.querySelectorAll('#set-general select');
+  const p={default_model:s[0]?.value,default_workflow:s[1]?.value,auto_refresh:s[2]?.value};
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'preferences',prefs:p})});
+  showToast(r?'Preferences saved!':'Save failed',r?'success':'error');
+  startRefreshTimer();
+}
+async function autoHeal(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'auto_heal'})});
+  showToast(r?'Cooldowns reset':'Reset failed',r?'success':'error');renderAll();
+}
+async function clearHistory(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'clear_history'})});
+  showToast(r?'History cleared':'Failed',r?'success':'error');
+}
+async function resetRankings(){
+  const r=await api('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'reset_rankings'})});
+  showToast(r?'Rankings reset':'Failed',r?'success':'error');
+}
+
+// === DRAG AND DROP ===
+function initDragSort(){
+  const container=document.getElementById('prio-list');if(!container)return;
+  let dragged=null;
+  container.querySelectorAll('[draggable="true"]').forEach(item=>{
+    item.addEventListener('dragstart',e=>{dragged=item;item.style.opacity='0.4';});
+    item.addEventListener('dragend',e=>{item.style.opacity='1';dragged=null;});
+    item.addEventListener('dragover',e=>{e.preventDefault();});
+    item.addEventListener('drop',e=>{
+      e.preventDefault();if(!dragged||dragged===item)return;
+      const rect=item.getBoundingClientRect();const before=e.clientY<rect.top+rect.height/2;
+      container.insertBefore(dragged,before?item:item.nextSibling);
+      updatePriorityNumbers();
+    });
+  });
+}
+function updatePriorityNumbers(){
+  document.querySelectorAll('#prio-list .font-mono.text-xs').forEach((el,i)=>{
+    el.textContent=`${i+1}. ${el.textContent.replace(/^\d+\.\s*/,'')}`;
+  });
+}
+
+// === AGENT MODAL ===
+async function openAgentModal(name){
+  const d=await api('/api/agents/'+encodeURIComponent(name));if(!d?.models)return;
+  const overlay=document.createElement('div');
+  overlay.className='modal-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML=`<div class="modal" style="padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()"><div class="flex items-center justify-between mb-4"><h3 class="font-mono text-sm font-semibold">${escapeHtml(name)} &#8212; Agent Details</h3><button class="text-muted text-xl" onclick="this.closest('.modal-overlay').remove()">&times;</button></div><table class="w-full text-xs"><thead><tr class="text-muted font-mono uppercase" style="background:rgba(30,41,59,.3)"><th class="py-2 px-3 text-left">Model</th><th class="py-2 px-3 text-left">Capabilities</th><th class="py-2 px-3 text-center">Dels</th><th class="py-2 px-3 text-center">Success</th></tr></thead><tbody>${d.models.map(m=>`<tr style="border-bottom:1px solid #1E293B"><td class="py-2 px-3 font-mono text-accent">${escapeHtml(m.id)}</td><td class="py-2 px-3">${(m.capabilities||[]).map(c=>`<span class="status s-info">${escapeHtml(c)}</span>`).join(' ')}</td><td class="py-2 px-3 text-center font-mono">${m.total_dels}</td><td class="py-2 px-3 text-center font-mono text-${m.success_rate>0.8?'accent':m.success_rate>0.5?'warn':'danger'}">${Math.round(m.success_rate*100)}%</td></tr>`).join('')}</tbody></table></div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+// === KEYBOARD ===
+document.addEventListener('keydown',function(e){
+  if(e.target.closest('input,select,textarea'))return;
+  const m={l:'live',o:'logs',h:'history',a:'analytics',c:'compare',q:'queue',e:'exec',s:'settings'};
+  if(m[e.key]&&!e.ctrlKey&&!e.metaKey)switchTab(m[e.key]);
+  if(e.key>='1'&&e.key<='3'){const idx=parseInt(e.key)-1;const tasks=document.querySelectorAll('#task-cards > div');if(tasks[idx])tasks[idx].click();}
+  if(e.key==='F7'){e.preventDefault();document.getElementById('project-switcher')?.focus();}
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();switchTab('exec');setTimeout(()=>document.getElementById('exec-task')?.focus(),200);}
+  if(e.key==='?'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();document.getElementById('shortcuts-modal')?.classList.toggle('hidden');}
+  if(e.key==='Escape'){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden'));}
+});
+
+let _refreshTimer=null,_logTimer=null;
+function startRefreshTimer(){
+  if(_refreshTimer)clearInterval(_refreshTimer);
+  const val=document.getElementById('pref-ref')?.value||'5s';
+  const ms=val==='off'?0:parseInt(val)*1000;
+  if(ms>0)_refreshTimer=setInterval(renderAll,ms);
+}
+// === INIT ===
+(async function(){
+  document.getElementById('tab-bar').innerHTML=TABS.map(t=>`<div class="tab ${t===activeTab?'active':''}" onclick="switchTab('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('');
+  await loadProjects();await renderAll();switchTab('live');
+  startRefreshTimer();
+  if(_logTimer)clearInterval(_logTimer);
+  _logTimer=setInterval(()=>{if(activeTab==='logs'){_logEntries=[];loadLogs();}},8000);
+  setInterval(()=>{if(activeTab==='live'&&liveTaskId)loadLiveOutput();},4000);
+})();
+</script>
+</body>
+</html>

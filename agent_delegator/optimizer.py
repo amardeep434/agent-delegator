@@ -1,9 +1,9 @@
 """Learned routing - uses success rates to auto-tune provider priorities."""
 
 from datetime import datetime, timezone
-from delegator.metrics import get_success_rate, get_recent_delegations
-from delegator.state import rankings_path
-from delegator.utils import load_json, save_json
+from agent_delegator.metrics import get_success_rate, get_recent_delegations
+from agent_delegator.state import rankings_path
+from agent_delegator.utils import load_json, save_json
 
 
 def optimize_rankings() -> dict:

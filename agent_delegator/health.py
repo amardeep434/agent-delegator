@@ -2,8 +2,8 @@
 
 import shutil
 import subprocess
-from delegator.registry import load_registry
-from delegator.capabilities import announce_capabilities
+from agent_delegator.registry import load_registry
+from agent_delegator.capabilities import announce_capabilities
 
 
 def _find_cli_binary(cli_template: str, agent_name: str) -> str | None:

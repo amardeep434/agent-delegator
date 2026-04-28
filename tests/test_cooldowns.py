@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.cooldowns import is_cooled_down, record_failure, record_success
+from agent_delegator.cooldowns import is_cooled_down, record_failure, record_success
 
 
 def test_not_cooled_down_initially():

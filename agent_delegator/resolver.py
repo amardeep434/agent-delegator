@@ -1,7 +1,7 @@
 """Model name resolver - normalizes model names per agent and resolves logical models to concrete providers."""
 
 import shlex
-from delegator.registry import get_agent, get_logical_model
+from agent_delegator.registry import get_agent, get_logical_model
 
 
 def normalize_model(model: str, agent: str, registry: dict) -> str:

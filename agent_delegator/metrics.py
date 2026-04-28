@@ -1,7 +1,7 @@
 """SQLite metrics storage for delegation analytics."""
 
 import sqlite3
-from delegator.state import metrics_db_path
+from agent_delegator.state import metrics_db_path
 
 
 def _get_db() -> sqlite3.Connection:

@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.resolver import normalize_model, resolve_logical_model, resolve_model
-from delegator.registry import load_registry
+from agent_delegator.resolver import normalize_model, resolve_logical_model, resolve_model
+from agent_delegator.registry import load_registry
 
 
 def test_normalize_sonnet_claude():

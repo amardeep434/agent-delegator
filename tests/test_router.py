@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.router import resolve_route
-from delegator.registry import load_registry
+from agent_delegator.router import resolve_route
+from agent_delegator.registry import load_registry
 
 
 def test_resolve_route_implementation():

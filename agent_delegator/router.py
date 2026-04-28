@@ -1,6 +1,6 @@
 """Agent-agnostic routing engine - resolves workflow+task to delegate_to agent + model."""
 
-from delegator.registry import get_route, get_agent
+from agent_delegator.registry import get_route, get_agent
 
 
 def resolve_route(registry: dict, workflow: str, task: str, from_agent: str = "_any_agent_") -> tuple[str, str]:

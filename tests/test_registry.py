@@ -8,8 +8,8 @@ from pathlib import Path
 # Ensure package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.registry import load_registry, get_agent, get_route
-from delegator.utils import deep_merge
+from agent_delegator.registry import load_registry, get_agent, get_route
+from agent_delegator.utils import deep_merge
 
 
 def test_deep_merge():

@@ -5,17 +5,17 @@ import json
 import os
 import sys
 from pathlib import Path
-from delegator.models import DelegationRequest
-from delegator.executor import execute
-from delegator.registry import load_registry
-from delegator.router import resolve_route
-from delegator.resolver import resolve_logical_model
-from delegator.cooldowns import get_active_cooldowns
-from delegator.cleanup import cleanup_stale_worktrees
-from delegator.health import check_all_agents
-from delegator.capabilities import get_capabilities, discover_capabilities
-from delegator.optimizer import optimize_rankings
-from delegator.metrics import get_recent_delegations, get_success_rate
+from agent_delegator.models import DelegationRequest
+from agent_delegator.executor import execute
+from agent_delegator.registry import load_registry
+from agent_delegator.router import resolve_route
+from agent_delegator.resolver import resolve_logical_model
+from agent_delegator.cooldowns import get_active_cooldowns
+from agent_delegator.cleanup import cleanup_stale_worktrees
+from agent_delegator.health import check_all_agents
+from agent_delegator.capabilities import get_capabilities, discover_capabilities
+from agent_delegator.optimizer import optimize_rankings
+from agent_delegator.metrics import get_recent_delegations, get_success_rate
 
 
 def _safe_path(unsafe: str, fallback_root: str | None = None) -> Path:
@@ -161,8 +161,27 @@ def cmd_learn(args):
     print(f"Learned from recent delegations. Rankings updated at {result['last_optimized']}")
 
 
+def _dashboard_disabled() -> bool:
+    """Check if user has disabled the dashboard via env or config."""
+    if os.environ.get("AGENT_DELEGATOR_NO_DASHBOARD", "").strip() in ("1", "true", "yes"):
+        return True
+    cfg_path = Path(os.getcwd()) / ".agent-delegator.json"
+    if cfg_path.exists():
+        try:
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            if cfg.get("disable_dashboard"):
+                return True
+        except Exception:
+            pass
+    return False
+
+
 def cmd_dashboard(args):
-    from delegator.dashboard.server import run_server
+    if _dashboard_disabled():
+        print("Dashboard is disabled. Set AGENT_DELEGATOR_NO_DASHBOARD=0 or remove disable_dashboard from .agent-delegator.json to enable.")
+        sys.exit(1)
+    from agent_delegator.dashboard.server import run_server
     import webbrowser
     port = args.port or 8765
     u = f"http://127.0.0.1:{port}"
@@ -186,7 +205,7 @@ def cmd_metrics(args):
 
 
 def cmd_init(args):
-    config_path = Path(args.project or os.getcwd()) / ".delegator.json"
+    config_path = Path(args.project or os.getcwd()) / ".agent-delegator.json"
     if config_path.exists():
         print(f"Config already exists at {config_path}")
         return
@@ -197,14 +216,15 @@ def cmd_init(args):
         },
         "provider_priority": ["claude", "opencode", "copilot"],
         "worktree_ttl_hours": 24,
-        "cooldown_minutes": 5
+        "cooldown_minutes": 5,
+        "disable_dashboard": False
     }
     config_path.write_text(json.dumps(template, indent=2) + "\n")
     print(f"Created {config_path}")
 
 
 def cmd_config(args):
-    config_path = Path(args.project or os.getcwd()) / ".delegator.json"
+    config_path = Path(args.project or os.getcwd()) / ".agent-delegator.json"
     if args.key:
         with open(config_path) as f:
             cfg = json.load(f)
@@ -218,7 +238,7 @@ def cmd_config(args):
         if config_path.exists():
             print(config_path.read_text())
         else:
-            print("No .delegator.json in this project. Run 'delegator init'.")
+            print("No .agent-delegator.json in this project. Run 'delegator init'.")
 
 
 def cmd_test(args):
@@ -233,6 +253,8 @@ def cmd_test(args):
 
 def main():
     parser = argparse.ArgumentParser(description="delegator - Agent-agnostic AI CLI delegation")
+    parser.add_argument("--no-dashboard", action="store_true", default=False,
+                        help="Disable dashboard features (can also set AGENT_DELEGATOR_NO_DASHBOARD=1)")
     sub = parser.add_subparsers(dest="command")
 
     p_exec = sub.add_parser("exec", help="Execute delegation")
@@ -285,7 +307,7 @@ def main():
     p_dash.add_argument("--port", type=int, default=8765, help="Port (default: 8765)")
     p_dash.set_defaults(func=cmd_dashboard)
 
-    p_init = sub.add_parser("init", help="Initialize .delegator.json")
+    p_init = sub.add_parser("init", help="Initialize .agent-delegator.json")
     p_init.add_argument("--project", default=None)
     p_init.set_defaults(func=cmd_init)
 
@@ -300,6 +322,8 @@ def main():
     p_test.set_defaults(func=cmd_test)
 
     args = parser.parse_args()
+    if args.no_dashboard:
+        os.environ["AGENT_DELEGATOR_NO_DASHBOARD"] = "1"
     if hasattr(args, "func"):
         args.func(args)
     else:

@@ -3,7 +3,7 @@ import sys, os, json, subprocess
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from delegator.executor import _check_rate_limit, _check_failure
+from agent_delegator.executor import _check_rate_limit, _check_failure
 
 def test_rate_limit_pattern_matching():
     registry = {
@@ -34,9 +34,9 @@ def test_check_failure_missing_file():
 
 
 def test_fallback_order_with_rankings():
-    from delegator.optimizer import get_rankings
-    from delegator.state import rankings_path
-    from delegator.utils import save_json
+    from agent_delegator.optimizer import get_rankings
+    from agent_delegator.state import rankings_path
+    from agent_delegator.utils import save_json
 
     test_rankings = {
         "last_optimized": "2026-04-27T00:00:00Z",

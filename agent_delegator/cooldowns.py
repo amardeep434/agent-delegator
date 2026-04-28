@@ -1,8 +1,8 @@
 """Circuit breaker - failure tracking with exponential cooldown."""
 
 from datetime import datetime, timezone, timedelta
-from delegator.state import cooldowns_path
-from delegator.utils import load_json, save_json
+from agent_delegator.state import cooldowns_path
+from agent_delegator.utils import load_json, save_json
 
 
 def _load_cooldowns() -> dict:

@@ -7,7 +7,7 @@ from pathlib import Path
 def state_dir() -> Path:
     """Return the delegator state directory, creating it if needed."""
     xdg = os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state"))
-    path = Path(xdg) / "delegator"
+    path = Path(xdg) / "agent-delegator"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
