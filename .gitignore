@@ -54,6 +54,9 @@ handoff-template.md
 mockups/
 sort_by_date.py
 
+# Marketing / Content Pipeline (private, local only)
+marketing/
+
 # Build Artifacts
 build/
 dist/
