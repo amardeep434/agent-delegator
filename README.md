@@ -3,6 +3,7 @@
 > Agent-agnostic AI CLI delegation with **federated model failover**, **intelligent routing**, and a **real-time Mission Control dashboard**.
 
 [![CI](https://github.com/amardeep434/agent-delegator/actions/workflows/ci.yml/badge.svg)](https://github.com/amardeep434/agent-delegator/actions/workflows/ci.yml)
+[![Commit Lint](https://github.com/amardeep434/agent-delegator/actions/workflows/commit-lint.yml/badge.svg)](https://github.com/amardeep434/agent-delegator/actions/workflows/commit-lint.yml)
 [![PyPI](https://img.shields.io/pypi/v/agent-delegator)](https://pypi.org/project/agent-delegator/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -89,11 +90,6 @@ Adding a new agent requires only a few lines in `.agent-delegator.json`. See [IN
 ```bash
 pip install agent-delegator
 ```
-
-> **Note:** Package coming soon to PyPI. Until then, install from source:
-> ```bash
-> pip install git+https://github.com/amardeep434/agent-delegator.git
-> ```
 
 This includes the full package with the Mission Control dashboard. The dashboard requires **zero extra dependencies** — it's pure Python stdlib + static HTML.
 
@@ -372,6 +368,38 @@ git commit -m "feat: add Gemini agent support"
 git push origin main
 # → Workflow detects feat: → bumps minor → publishes v0.2.0
 ```
+
+---
+
+## Contributing
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) to enable automatic versioning and PyPI publishing.
+
+### Local Setup
+
+```bash
+# Ensure commit-msg hook is active
+git config core.hooksPath .githooks
+```
+
+### Commit Examples
+
+```bash
+git commit -m "feat: add dashboard analytics tab"      # triggers minor release
+git commit -m "fix(api): handle empty task input"      # triggers patch release
+git commit -m "docs: update install instructions"      # no release
+git commit -m "test: add security regression tests"    # no release
+```
+
+### Pull Requests
+
+All PRs are checked by the [commitlint](.github/workflows/commit-lint.yml) workflow. Commits must follow the format:
+
+```
+<type>[(scope)][!]: <description>
+```
+
+Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
 ---
 

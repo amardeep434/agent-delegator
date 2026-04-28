@@ -2,6 +2,36 @@
 
 This document defines what goes into the **Git repository** vs what gets **published to PyPI**.
 
+## How Releases Work
+
+Releases are **fully automated** via GitHub Actions. No manual version bumping or `twine upload` needed.
+
+### Commit → Version Bump Mapping
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/). The release workflow inspects commits since the last tag and bumps accordingly:
+
+| Commit Type | Version Bump | Example |
+|-------------|-------------|---------|
+| `BREAKING CHANGE:` or `!:` | **major** | `feat!: drop Python 3.9 support` |
+| `feat:` | **minor** | `feat: add new dashboard widget` |
+| `fix:` | **patch** | `fix: handle missing config file` |
+| `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `build:`, `ci:`, `chore:` | **none** | `docs: update README` |
+
+### Local Enforcement
+
+A `commit-msg` hook validates your commits before they even reach GitHub:
+
+```bash
+# One-time setup (already configured if you cloned after 2026-04-28)
+git config core.hooksPath .githooks
+```
+
+The hook will reject non-conventional commits and warn you about breaking changes.
+
+### CI Enforcement
+
+The `commit-lint.yml` workflow runs on every PR and push to `main`, ensuring the full history follows the convention.
+
 ## Git Repository
 
 Everything needed for development, CI/CD, and project history.
