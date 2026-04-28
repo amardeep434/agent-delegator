@@ -1,0 +1,53 @@
+#!/bin/sh
+# commit-msg hook - validates conventional commit format
+# Install: git config core.hooksPath .githooks
+
+COMMIT_MSG_FILE="$1"
+COMMIT_MSG=$(head -n1 "$COMMIT_MSG_FILE")
+
+# Valid conventional commit prefixes
+VALID_PREFIXES="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+"
+
+if ! echo "$COMMIT_MSG" | grep -qE "$VALID_PREFIXES"; then
+    echo ""
+    echo "ERROR: Commit message does not follow Conventional Commits format."
+    echo ""
+    echo "Expected format: <type>[(scope)][!]: <description>"
+    echo ""
+    echo "Valid types:"
+    echo "  feat      → New feature (triggers minor version bump)"
+    echo "  fix       → Bug fix (triggers patch version bump)"
+    echo "  docs      → Documentation changes"
+    echo "  style     → Code style (formatting, no logic change)"
+    echo "  refactor  → Code refactoring"
+    echo "  perf      → Performance improvements"
+    echo "  test      → Adding/updating tests"
+    echo "  build     → Build system changes"
+    echo "  ci        → CI/CD changes"
+    echo "  chore     → Maintenance tasks"
+    echo "  revert    → Reverting changes"
+    echo ""
+    echo "Examples:"
+    echo "  feat: add dashboard analytics tab"
+    echo "  fix(api): handle empty task input"
+    echo "  docs: update install instructions"
+    echo "  BREAKING CHANGE: remove deprecated CLI flag"
+    echo ""
+    echo "To bypass (not recommended): git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+# Check for breaking change marker
+if echo "$COMMIT_MSG" | grep -qE "BREAKING CHANGE|!:"; then
+    echo ""
+    echo "WARNING: This commit will trigger a MAJOR version bump!"
+    echo "Are you sure? (y/N)"
+    read -r CONFIRM < /dev/tty
+    if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
+        echo "Commit aborted."
+        exit 1
+    fi
+fi
+
+exit 0
