@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-delegator"
-version = "0.2.0"
+version = "0.3.0"
 description = "Agent-agnostic AI CLI delegation with federated model failover"
 readme = "README.md"
 license = {text = "MIT"}
