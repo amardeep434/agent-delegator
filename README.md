@@ -3,7 +3,7 @@
 > Agent-agnostic AI CLI delegation with **federated model failover**, **intelligent routing**, and a **real-time Mission Control dashboard**.
 
 [![CI](https://github.com/amardeep434/agent-delegator/actions/workflows/ci.yml/badge.svg)](https://github.com/amardeep434/agent-delegator/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/agent-delegator)](https://pypi.org/project/agent-agent-delegator/)
+[![PyPI](https://img.shields.io/pypi/v/agent-delegator)](https://pypi.org/project/agent-delegator/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -89,6 +89,11 @@ Adding a new agent requires only a few lines in `.agent-delegator.json`. See [IN
 ```bash
 pip install agent-delegator
 ```
+
+> **Note:** Package coming soon to PyPI. Until then, install from source:
+> ```bash
+> pip install git+https://github.com/amardeep434/agent-delegator.git
+> ```
 
 This includes the full package with the Mission Control dashboard. The dashboard requires **zero extra dependencies** — it's pure Python stdlib + static HTML.
 
